@@ -579,6 +579,21 @@ export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [authSession, setAuthSession] = useState(null);
 
+  // Bell notification badge — new articles since last visit
+  const [bellCount, setBellCount] = useState(0);
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const lastVisited = localStorage.getItem('news_last_visited_at');
+    if (!lastVisited) return;
+    supabase
+      .from('cyber_news')
+      .select('id', { count: 'exact', head: true })
+      .eq('published', true)
+      .gt('created_at', lastVisited)
+      .then(({ count }) => { if (count > 0) setBellCount(count); });
+  }, [location.pathname]);
+
   // UI Telemetry
   const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 });
   const [isHoveringClickable, setIsHoveringClickable] = useState(false);
@@ -809,20 +824,6 @@ export default function App() {
     { label: "Contact", path: "/contact" }
   ];
 
-  // Bell notification badge — new articles since last visit
-  const [bellCount, setBellCount] = useState(0);
-  useEffect(() => {
-    const supabase = getSupabase();
-    if (!supabase) return;
-    const lastVisited = localStorage.getItem('news_last_visited_at');
-    if (!lastVisited) return;
-    supabase
-      .from('cyber_news')
-      .select('id', { count: 'exact', head: true })
-      .eq('published', true)
-      .gt('created_at', lastVisited)
-      .then(({ count }) => { if (count > 0) setBellCount(count); });
-  }, [location.pathname]);
 
   return (
     <>
