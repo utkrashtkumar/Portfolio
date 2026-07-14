@@ -829,7 +829,7 @@ export default function CommandTerminal({ onTriggerBreach }) {
           { text: "── SECURE CHANNEL CONFIGURATION ─────────────────", type: "success" },
           { text: "  Email:    utkrashtkumar@gmail.com", type: "output" },
           { text: "  Location: Lucknow, India", type: "output" },
-          { text: "  Status:   Accepting connections (Available for hire)", type: "output" }
+          { text: "  Status:   Accepting connections (Contact Us)", type: "output" }
         ]);
         break;
       case "social":

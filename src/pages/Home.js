@@ -170,7 +170,7 @@ export default function Home({
               View Projects
             </button>
             <button onClick={() => navigate("/contact")} className="px-8 py-3.5 bg-transparent border border-white/10 rounded-lg text-slate-400 font-display text-sm font-semibold tracking-widest uppercase transition-all duration-300 hover:border-brand-purple/40 hover:text-brand-purple hover:-translate-y-0.5 hover:shadow-[0_0_20px_var(--brand-purple)] backdrop-blur-md cursor-pointer">
-              Hire Me
+              Contact Us
             </button>
             <a href="/resume.pdf" target="_blank" rel="noopener noreferrer" className="px-5 flex items-center gap-2 py-3.5 bg-brand-cyan/10 border border-brand-cyan/20 rounded-lg text-brand-cyan font-display text-sm font-semibold tracking-widest uppercase transition-all duration-300 hover:bg-brand-cyan/20 hover:border-brand-cyan/40 hover:-translate-y-0.5 hover:shadow-[0_0_20px_var(--brand-cyan)] backdrop-blur-md">
               <Download className="w-4 h-4" />

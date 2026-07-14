@@ -318,7 +318,15 @@ const UserSessionDashboard = ({ user, session, onSignOut }) => {
   };
 
   const queryParams = new URLSearchParams(window.location.search);
-  const isConfirmed = queryParams.get('confirmed') === 'true';
+  const [showConfirmedAlert, setShowConfirmedAlert] = useState(queryParams.get('confirmed') === 'true');
+  const [showResetSuccessAlert, setShowResetSuccessAlert] = useState(queryParams.get('resetSuccess') === 'true');
+
+  useEffect(() => {
+    if (queryParams.get('confirmed') === 'true' || queryParams.get('resetSuccess') === 'true') {
+      // Clear the query parameters from the browser address bar to prevent race conditions during subsequent logins
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const supabase = getSupabase();
   const isConfigured = !!supabase;
@@ -455,7 +463,7 @@ const UserSessionDashboard = ({ user, session, onSignOut }) => {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/profile`
+        redirectTo: `${window.location.origin}/reset-password`
       });
       if (error) throw error;
       setLogs(prev => [...prev, '[SUCCESS] Password recovery dispatch sent. Check your inbox.']);
@@ -517,9 +525,15 @@ const UserSessionDashboard = ({ user, session, onSignOut }) => {
         )}
       </div>
 
-      {isConfirmed && (
+      {showConfirmedAlert && (
         <div className="bg-brand-green/10 border border-brand-green/20 p-3 rounded-lg text-brand-green text-[0.58rem] leading-normal font-mono flex items-center gap-1.5 animate-fadeIn">
-          <CheckCircle2 className="w-3.5 h-3.5 text-brand-green shrink-0 animate-bounce" /> [SUCCESS] Email verified successfully. Please authenticate session below.
+          <CheckCircle2 className="w-3.5 h-3.5 text-brand-green shrink-0 animate-bounce" /> [SUCCESS] Your email is verified. You can now login to your account.
+        </div>
+      )}
+
+      {showResetSuccessAlert && (
+        <div className="bg-brand-green/10 border border-brand-green/20 p-3 rounded-lg text-brand-green text-[0.58rem] leading-normal font-mono flex items-center gap-1.5 animate-fadeIn">
+          <CheckCircle2 className="w-3.5 h-3.5 text-brand-green shrink-0 animate-bounce" /> [SUCCESS] Your password has been reset successfully. Please login with your new credentials.
         </div>
       )}
 

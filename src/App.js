@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { getSupabase } from './supabaseClient.js';
 import { 
   Palette, Leaf, Menu, X, ArrowUp, Lock, Unlock, HelpCircle, 
-  ChevronRight, Terminal, Activity, Shield, Cpu, Network, User, ArrowLeft, Bell, BellRing
+  ChevronRight, Terminal, Activity, Shield, Cpu, Network, User, ArrowLeft, Bell, BellRing, LogOut, Linkedin
 } from 'lucide-react';
 
 // Subpages
@@ -21,6 +21,7 @@ import Profile from './pages/Profile.js';
 import Premium from './pages/Premium.js';
 import News from './pages/News.js';
 import Admin from './pages/Admin.js';
+import ResetPassword from './pages/ResetPassword.js';
 
 // ============================================================
 // COMPONENT DECLARATIONS (PORTED DIRECTLY FROM ORIGINAL App.js)
@@ -421,7 +422,7 @@ const HackerBot = () => {
               Research
             </button>
             <button onClick={() => handleQuery("contact")} className="px-2 py-1 bg-white/5 border border-white/10 hover:border-brand-cyan/30 text-[0.55rem] text-slate-400 hover:text-brand-cyan rounded cursor-pointer transition-colors">
-              Hire Him
+              Contact Us
             </button>
           </div>
         </div>
@@ -606,38 +607,42 @@ export default function App() {
         const supabase = getSupabase();
         if (supabase) {
           const { data: { session } } = await supabase.auth.getSession();
-          // Check if this is a signup confirmation redirect in the URL hash
-          const isSignupConfirmation = window.location.hash.includes('type=signup');
+          // Check if this is a signup confirmation redirect
+          const isSignupConfirmation = window.location.hash.includes('type=signup') || 
+                                       window.location.search.includes('type=signup') ||
+                                       (window.location.search.includes('confirmed=true') && window.location.search.includes('code='));
           
           if (isSignupConfirmation && session) {
             // Force sign out immediately to prevent auto-login
             await supabase.auth.signOut();
             window.location.hash = ''; // Clear hash
-            navigate('/portal?confirmed=true');
+            navigate('/portal?confirmed=true', { replace: true });
             return;
           }
 
-          if (session) {
+          if (session && !isSignupConfirmation) {
             setAuthUser(session.user);
             setAuthSession(session);
           }
 
           // Listen to changes
           const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-            const isSignupHash = window.location.hash.includes('type=signup');
+            const isSignupHash = window.location.hash.includes('type=signup') || 
+                                 window.location.search.includes('type=signup') ||
+                                 (window.location.search.includes('confirmed=true') && window.location.search.includes('code='));
             if (isSignupHash && currentSession) {
               await supabase.auth.signOut();
               window.location.hash = '';
               setAuthUser(null);
               setAuthSession(null);
-              navigate('/portal?confirmed=true');
+              navigate('/portal?confirmed=true', { replace: true });
               return;
             }
 
-            if (currentSession) {
+            if (currentSession && !isSignupHash) {
               setAuthUser(currentSession.user);
               setAuthSession(currentSession);
-            } else {
+            } else if (!currentSession) {
               setAuthUser(null);
               setAuthSession(null);
             }
@@ -792,6 +797,17 @@ export default function App() {
     setIsMobileMenuOpen(false);
   };
 
+  const handleSignOut = async () => {
+    const supabase = getSupabase();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    setAuthUser(null);
+    setAuthSession(null);
+    setIsMobileMenuOpen(false);
+    navigate('/portal');
+  };
+
   const navItems = [
     { label: "Terminal", path: "/" },
     { label: "Tools", path: "/tools" },
@@ -871,34 +887,19 @@ export default function App() {
             )}
           </Link>
           
-          <div className="hidden sm:flex items-center gap-2 font-mono text-[0.72rem] text-brand-green">
-            <div className="w-2 h-2 rounded-full bg-brand-green shadow-[0_0_8px_var(--color-brand-green)] animate-blink" />
-            <a href="https://www.linkedin.com/in/utkrashtkumar/" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-brand-cyan transition-colors">Available for hire</a>
+          <div className="hidden sm:flex items-center gap-1.5 font-mono text-[0.72rem] text-slate-400">
+            <Linkedin className="w-3.5 h-3.5 text-brand-cyan" />
+            <a href="https://www.linkedin.com/in/utkrashtkumar/" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-brand-cyan transition-colors">LinkedIn</a>
           </div>
 
-          {!authUser && (
-            <div className="flex items-center gap-3">
-              <span className="hidden lg:inline font-mono text-[0.6rem] text-slate-500 uppercase tracking-wider">
-                ⚡ Login or signup to access premium features (100% Free)
-              </span>
-              <Link
-                to="/portal"
-                onClick={handleNavLinkClick}
-                className="px-2.5 py-1 bg-brand-cyan/15 hover:bg-brand-cyan/25 border border-brand-cyan/35 text-brand-cyan font-mono text-[0.58rem] rounded uppercase font-bold tracking-wider cursor-pointer active:scale-95 transition-all no-underline shrink-0 animate-pulse hover:animate-none"
-              >
-                Sign In / Sign Up
-              </Link>
-            </div>
-          )}
-
-          {authUser && (
+          <div className="flex items-center gap-2">
             <Link
-              to="/profile"
+              to={authUser ? "/profile" : "/portal"}
               onClick={handleNavLinkClick}
               className="w-9 h-9 rounded-full overflow-hidden border border-brand-cyan/25 hover:border-brand-cyan/50 transition-colors flex items-center justify-center bg-black/40 cursor-pointer"
-              title="View Profile / Account Settings"
+              title={authUser ? "View Profile / Account Settings" : "Sign In / Sign Up"}
             >
-              {authUser.user_metadata?.avatar_url ? (
+              {authUser?.user_metadata?.avatar_url ? (
                 <img
                   src={authUser.user_metadata.avatar_url}
                   alt="Profile"
@@ -908,7 +909,17 @@ export default function App() {
                 <User className="w-4.5 h-4.5 text-brand-cyan" />
               )}
             </Link>
-          )}
+
+            {authUser && (
+              <button
+                onClick={handleSignOut}
+                className="w-9 h-9 rounded-full bg-white/5 border border-brand-cyan/20 flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-all cursor-pointer active:scale-95"
+                title="Sign Out Session"
+              >
+                <LogOut className="w-4.5 h-4.5" />
+              </button>
+            )}
+          </div>
 
           {/* Mobile Menu Toggle */}
           <button
@@ -929,9 +940,9 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 top-[109px] z-[90] bg-[var(--bg-base)]/95 backdrop-blur-2xl border-b border-brand-cyan/10 flex flex-col items-center justify-center p-6 md:hidden"
+            className="fixed inset-x-0 bottom-0 top-[109px] z-[90] bg-[var(--bg-base)]/95 backdrop-blur-2xl border-b border-brand-cyan/10 flex flex-col items-center justify-start p-6 md:hidden overflow-y-auto"
           >
-            <ul className="flex flex-col gap-6 text-center list-none p-0 m-0 w-full">
+            <ul className="flex flex-col gap-6 text-center list-none p-0 m-0 w-full py-4">
               {navItems.map((item) => (
                 <li key={item.label}>
                   <Link
@@ -944,9 +955,19 @@ export default function App() {
                 </li>
               ))}
             </ul>
-            <div className="mt-8 flex items-center gap-2 font-mono text-xs text-brand-green bg-brand-green/5 border border-brand-green/20 px-4 py-2 rounded-full">
-              <div className="w-2 h-2 rounded-full bg-brand-green shadow-[0_0_8px_var(--color-brand-green)] animate-blink" />
-              <a href="https://www.linkedin.com/in/utkrashtkumar/" target="_blank" rel="noopener noreferrer">Available for hire</a>
+
+            {authUser && (
+              <button
+                onClick={handleSignOut}
+                className="mt-6 mb-2 px-6 py-3 bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-xs rounded uppercase font-bold tracking-widest hover:bg-red-500/25 active:scale-95 transition-all cursor-pointer w-48 text-center"
+              >
+                Sign Out Session
+              </button>
+            )}
+
+            <div className="mt-8 mb-4 flex items-center gap-2 font-mono text-xs text-slate-300 bg-white/5 border border-white/10 px-4 py-2 rounded-full shrink-0 hover:border-brand-cyan/35 hover:text-brand-cyan transition-colors animate-fadeIn">
+              <Linkedin className="w-3.5 h-3.5 text-brand-cyan" />
+              <a href="https://www.linkedin.com/in/utkrashtkumar/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
             </div>
           </motion.div>
         )}
@@ -1014,6 +1035,13 @@ export default function App() {
               } />
                <Route path="/profile" element={
                 <Profile 
+                  authUser={authUser} 
+                  setAuthUser={setAuthUser} 
+                  setAuthSession={setAuthSession} 
+                />
+              } />
+              <Route path="/reset-password" element={
+                <ResetPassword 
                   authUser={authUser} 
                   setAuthUser={setAuthUser} 
                   setAuthSession={setAuthSession} 
