@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { getSupabase } from '../supabaseClient.js';
 import {
-  Bell, BellRing, Send, MessageCircle, X, Clock, Tag,
-  Eye, Shield, AlertTriangle, Flame, Rss, Mail, Search,
-  ChevronDown, ChevronUp, ExternalLink, CheckCircle, RefreshCw,
-  ArrowUp, Newspaper, Globe, Cpu, Zap, Lock, AlertCircle, Loader2
+  Send, MessageCircle, X, Clock,
+  Eye, Search,
+  Newspaper, Globe, Cpu, Zap, Lock, AlertCircle, Loader2
 } from 'lucide-react';
-import emailjs from '@emailjs/browser';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const ADMIN_EMAIL = 'utkrashtkumar@gmail.com';
+const SITE_URL = 'https://utkrashtkumar.netlify.app';
 const CATEGORIES = ['All', 'Vulnerabilities', 'Attacks', 'Tools', 'Research', 'General'];
 
 const CATEGORY_CONFIG = {
@@ -33,92 +33,6 @@ const formatDate = (ts) =>
 
 const getCategoryConfig = (cat) => CATEGORY_CONFIG[cat] || CATEGORY_CONFIG['General'];
 
-// ─── Newsletter Subscribe Bar ────────────────────────────────────────────────
-const NewsletterBar = ({ onSubscribed }) => {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState('idle'); // idle | loading | success | error
-
-  const handleSubscribe = async (e) => {
-    e.preventDefault();
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) return;
-    setStatus('loading');
-
-    const supabase = getSupabase();
-    if (!supabase) { setStatus('error'); return; }
-
-    const { error } = await supabase
-      .from('newsletter_subscribers')
-      .upsert({ email: email.trim() }, { onConflict: 'email' });
-
-    if (error) {
-      setStatus('error');
-      return;
-    }
-
-    // Send welcome email via EmailJS (graceful fail if not configured)
-    try {
-      const svcId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-      const tplId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-      const pubKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-      if (svcId && tplId && pubKey) {
-        await emailjs.send(svcId, tplId, {
-          subscriber_email: email.trim(),
-          admin_email: ADMIN_EMAIL,
-          to_email: email.trim(),
-          reply_to: ADMIN_EMAIL
-        }, pubKey);
-      }
-    } catch (_) {}
-
-    setStatus('success');
-    onSubscribed?.();
-    setEmail('');
-    setTimeout(() => setStatus('idle'), 4000);
-  };
-
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-brand-cyan/20 bg-black/40 backdrop-blur-md p-6 mb-8">
-      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-brand-cyan/0 via-brand-cyan to-brand-cyan/0" />
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center shrink-0">
-            <Rss className="w-5 h-5 text-brand-cyan" />
-          </div>
-          <div>
-            <h4 className="font-display font-bold text-white text-sm uppercase tracking-wider">Subscribe to Cyber Intel Feed</h4>
-            <p className="text-slate-400 text-xs font-sans mt-0.5">Get the latest cybersecurity news, zero-days & threat alerts delivered to your inbox — free.</p>
-          </div>
-        </div>
-
-        {status === 'success' ? (
-          <div className="flex items-center gap-2 text-brand-green font-mono text-sm shrink-0">
-            <CheckCircle className="w-4 h-4" />
-            <span>Subscribed! Welcome to the network.</span>
-          </div>
-        ) : (
-          <form onSubmit={handleSubscribe} className="flex gap-2 shrink-0 w-full sm:w-auto">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="agent@domain.com"
-              disabled={status === 'loading'}
-              className="flex-1 sm:w-64 px-3 py-2 bg-black/50 border border-white/10 rounded-lg font-mono text-xs text-white outline-none focus:border-brand-cyan/50 placeholder-slate-600 disabled:opacity-50"
-            />
-            <button
-              type="submit"
-              disabled={status === 'loading' || !email}
-              className="px-4 py-2 bg-brand-cyan/20 hover:bg-brand-cyan/30 border border-brand-cyan/40 text-brand-cyan font-mono text-xs font-bold uppercase rounded-lg cursor-pointer transition-all active:scale-95 disabled:opacity-50 shrink-0 flex items-center gap-1.5"
-            >
-              {status === 'loading' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-              {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
-            </button>
-          </form>
-        )}
-      </div>
-    </div>
-  );
-};
 
 // ─── Article Card ────────────────────────────────────────────────────────────
 const ArticleCard = ({ article, reactionCounts, onOpen }) => {
@@ -588,6 +502,7 @@ const ArticleModal = ({ article, authUser, onClose }) => {
 
 // ─── Main News Page ──────────────────────────────────────────────────────────
 export default function News({ authUser }) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -596,16 +511,34 @@ export default function News({ authUser }) {
   const [reactionCounts, setReactionCounts] = useState({});
   const [newArticleCount, setNewArticleCount] = useState(0);
 
+  // Auto-open article from URL ?article=id param (for SEO deep links)
   useEffect(() => {
-    loadArticles();
+    loadArticles().then((loaded) => {
+      const articleId = searchParams.get('article');
+      if (articleId && loaded?.length) {
+        const found = loaded.find(a => a.id === articleId);
+        if (found) setSelectedArticle(found);
+      }
+    });
   }, []);
+
+  // Update URL when article is opened or closed (gives each article a unique URL)
+  const openArticle = (article) => {
+    setSelectedArticle(article);
+    setSearchParams({ article: article.id }, { replace: false });
+  };
+
+  const closeArticle = () => {
+    setSelectedArticle(null);
+    setSearchParams({}, { replace: false });
+  };
 
   const loadArticles = async () => {
     setLoading(true);
     const supabase = getSupabase();
     if (!supabase) {
       setLoading(false);
-      return;
+      return [];
     }
 
     const { data } = await supabase
@@ -616,6 +549,7 @@ export default function News({ authUser }) {
 
     setArticles(data || []);
     setLoading(false);
+    return data || [];
 
     // Track new articles since last visit
     const lastVisited = localStorage.getItem('news_last_visited_at');
@@ -653,8 +587,93 @@ export default function News({ authUser }) {
 
   const supabase = getSupabase();
 
+  // ─── SEO: dynamic meta per article or default for /news page ─────────────
+  const seoTitle = selectedArticle
+    ? `${selectedArticle.title} | Cyber Intel — Utkrasht Kumar`
+    : 'Cyber Intel Feed | Cybersecurity News — Utkrasht Kumar';
+
+  const seoDescription = selectedArticle
+    ? (selectedArticle.summary || `${selectedArticle.title} — Read the full cybersecurity intelligence report on Utkrasht Kumar's Cyber Intel Feed.`)
+    : 'Live cybersecurity intelligence: zero-days, APT campaigns, vulnerability disclosures, tool releases, and threat research by Utkrasht Kumar.';
+
+  const seoImage = selectedArticle?.thumbnail_url || `${SITE_URL}/profile.png`;
+  const seoUrl = selectedArticle
+    ? `${SITE_URL}/news?article=${selectedArticle.id}`
+    : `${SITE_URL}/news`;
+
+  const articleJsonLd = selectedArticle ? JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    'headline': selectedArticle.title,
+    'description': selectedArticle.summary || '',
+    'image': selectedArticle.thumbnail_url ? [selectedArticle.thumbnail_url] : [],
+    'datePublished': selectedArticle.created_at,
+    'dateModified': selectedArticle.updated_at || selectedArticle.created_at,
+    'author': {
+      '@type': 'Person',
+      'name': selectedArticle.author || 'Utkrasht Kumar',
+      'url': SITE_URL
+    },
+    'publisher': {
+      '@type': 'Organization',
+      'name': 'Utkrasht Kumar Cyber Intel',
+      'logo': { '@type': 'ImageObject', 'url': `${SITE_URL}/profile.png` }
+    },
+    'mainEntityOfPage': { '@type': 'WebPage', '@id': seoUrl },
+    'articleSection': selectedArticle.category,
+    'keywords': selectedArticle.tags?.join(', ') || 'cybersecurity, hacking, vulnerability'
+  }) : null;
+
+  const breadcrumbJsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': SITE_URL },
+      { '@type': 'ListItem', 'position': 2, 'name': 'Cyber Intel Feed', 'item': `${SITE_URL}/news` },
+      ...(selectedArticle ? [{ '@type': 'ListItem', 'position': 3, 'name': selectedArticle.title, 'item': seoUrl }] : [])
+    ]
+  });
+
   return (
     <section className="py-12 animate-fadeIn">
+      {/* Dynamic SEO Helmet */}
+      <Helmet>
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDescription} />
+        {selectedArticle?.tags?.length > 0 && (
+          <meta name="keywords" content={selectedArticle.tags.join(', ')} />
+        )}
+        <link rel="canonical" href={seoUrl} />
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+
+        {/* Open Graph */}
+        <meta property="og:type" content={selectedArticle ? 'article' : 'website'} />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:image" content={seoImage} />
+        <meta property="og:url" content={seoUrl} />
+        <meta property="og:site_name" content="Utkrasht Kumar Cyber Intel" />
+        {selectedArticle && <meta property="article:published_time" content={selectedArticle.created_at} />}
+        {selectedArticle && <meta property="article:author" content={selectedArticle.author || 'Utkrasht Kumar'} />}
+        {selectedArticle && <meta property="article:section" content={selectedArticle.category} />}
+        {selectedArticle?.tags?.map(tag => (
+          <meta key={tag} property="article:tag" content={tag} />
+        ))}
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDescription} />
+        <meta name="twitter:image" content={seoImage} />
+        <meta name="twitter:creator" content="@utkrashtkumar" />
+
+        {/* Google News */}
+        <meta name="news_keywords" content={selectedArticle?.tags?.join(', ') || 'cybersecurity, zero-day, CVE, hacking, vulnerability'} />
+
+        {/* JSON-LD Structured Data */}
+        {articleJsonLd && <script type="application/ld+json">{articleJsonLd}</script>}
+        <script type="application/ld+json">{breadcrumbJsonLd}</script>
+      </Helmet>
       {/* Page Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-3">
@@ -673,8 +692,6 @@ export default function News({ authUser }) {
         <p className="font-mono text-xs text-slate-400">Live cybersecurity intelligence: zero-days, APT campaigns, tool releases, and research findings.</p>
       </div>
 
-      {/* Newsletter bar */}
-      <NewsletterBar onSubscribed={loadArticles} />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -736,7 +753,7 @@ export default function News({ authUser }) {
               key={article.id}
               article={article}
               reactionCounts={reactionCounts[article.id]}
-              onOpen={setSelectedArticle}
+              onOpen={openArticle}
             />
           ))}
         </div>
@@ -747,7 +764,7 @@ export default function News({ authUser }) {
         <ArticleModal
           article={selectedArticle}
           authUser={authUser}
-          onClose={() => setSelectedArticle(null)}
+          onClose={closeArticle}
         />
       )}
     </section>

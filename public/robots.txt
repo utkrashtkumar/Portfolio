@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Priority sections for crawling
+Allow: /news
+Allow: /news?article=
+
+# Block admin panel from being indexed
+Disallow: /admin
+
+Sitemap: https://utkrashtkumar.netlify.app/sitemap.xml
