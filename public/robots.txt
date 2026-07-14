@@ -8,4 +8,4 @@ Allow: /news?article=
 # Block admin panel from being indexed
 Disallow: /admin
 
-Sitemap: https://utkrashtkumar.netlify.app/sitemap.xml
+Sitemap: https://utkrasht.in/sitemap.xml

@@ -4,55 +4,55 @@
 
   <!-- Static pages -->
   <url>
-    <loc>https://utkrashtkumar.netlify.app/</loc>
+    <loc>https://utkrasht.in/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
-    <loc>https://utkrashtkumar.netlify.app/news</loc>
+    <loc>https://utkrasht.in/news</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://utkrashtkumar.netlify.app/tools</loc>
+    <loc>https://utkrasht.in/tools</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://utkrashtkumar.netlify.app/skills</loc>
+    <loc>https://utkrasht.in/skills</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
-    <loc>https://utkrashtkumar.netlify.app/projects</loc>
+    <loc>https://utkrasht.in/projects</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://utkrashtkumar.netlify.app/timeline</loc>
+    <loc>https://utkrasht.in/timeline</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
-    <loc>https://utkrashtkumar.netlify.app/ctf</loc>
+    <loc>https://utkrasht.in/ctf</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
-    <loc>https://utkrashtkumar.netlify.app/labs</loc>
+    <loc>https://utkrasht.in/labs</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://utkrashtkumar.netlify.app/contact</loc>
+    <loc>https://utkrasht.in/contact</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -62,7 +62,7 @@
     (Or generate this file dynamically using a Netlify build plugin)
 
   <url>
-    <loc>https://utkrashtkumar.netlify.app/news?article=YOUR-ARTICLE-UUID</loc>
+    <loc>https://utkrasht.in/news?article=YOUR-ARTICLE-UUID</loc>
     <changefreq>never</changefreq>
     <priority>0.8</priority>
     <news:news>

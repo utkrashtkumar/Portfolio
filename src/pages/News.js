@@ -10,7 +10,7 @@ import {
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const ADMIN_EMAIL = 'utkrashtkumar@gmail.com';
-const SITE_URL = 'https://utkrashtkumar.netlify.app';
+const SITE_URL = 'https://utkrasht.in';
 const CATEGORIES = ['All', 'Vulnerabilities', 'Attacks', 'Tools', 'Research', 'General'];
 
 const CATEGORY_CONFIG = {
