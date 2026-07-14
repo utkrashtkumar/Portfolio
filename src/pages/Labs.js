@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Terminal, Shield, Crosshair, Radar, Lock, Fingerprint, Activity, Zap, Cpu, Network, Key, ChevronRight, Monitor, Server, HelpCircle, Unlock, CheckCircle2, AlertCircle, Copy, Check, Play, RefreshCw, Eye, Search, AlertTriangle, HelpCircle as HelpIcon, PlayCircle, Mail
 } from 'lucide-react';
-import { SectionHeader } from '../components/Shared.js';
+import { SectionHeader, PremiumLock } from '../components/Shared.js';
 
 // ============================================================
 // CORE CRYPTO HELPERS
@@ -754,9 +754,7 @@ const ThreatWorldMap = () => {
       ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
       for (let x = 10; x < width; x += 15) {
         for (let y = 10; y < height; y += 15) {
-          ctx.beginPath();
-          ctx.arc(x, y, 0.8, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.fillRect(x - 0.75, y - 0.75, 1.5, 1.5);
         }
       }
 
@@ -1483,7 +1481,7 @@ const PgpDecryptionDemo = ({ isUnlocked, onRedirectToCtf }) => {
 // ============================================================
 // MAIN LABS PAGE VIEW EXPORT
 // ============================================================
-export default function Labs({ ctfSolved }) {
+export default function Labs({ ctfSolved, authUser }) {
   const navigate = useNavigate();
   return (
     <section className="py-12 animate-fadeIn space-y-12">
@@ -1546,7 +1544,17 @@ export default function Labs({ ctfSolved }) {
       </div>
 
       {/* Row 7: Incident Response Simulation */}
-      <IncidentResponseSim />
+      <div className="relative overflow-hidden rounded-2xl">
+        {!authUser && (
+          <PremiumLock 
+            title="PREMIUM INCIDENT RESPONSE LAB" 
+            desc="Obtain portal authentication credentials to initialize SOC incident containment drills, triage simulations, and attack correlation maps." 
+          />
+        )}
+        <div className={!authUser ? "blur-sm select-none pointer-events-none" : ""}>
+          <IncidentResponseSim />
+        </div>
+      </div>
 
       {/* Row 8: Cyber Kill Chain Timeline */}
       <AttackTimeline />
@@ -1555,7 +1563,17 @@ export default function Labs({ ctfSolved }) {
       <MitreAttackMatrix />
 
       {/* Row 10: Phishing Lab (full width) */}
-      <PhishingLab />
+      <div className="relative overflow-hidden rounded-2xl">
+        {!authUser && (
+          <PremiumLock 
+            title="PREMIUM PHISHING SANDBOX" 
+            desc="Sign in with verified credentials to deploy custom decoy profiles, SMTP header simulations, and user-behavior analytics." 
+          />
+        )}
+        <div className={!authUser ? "blur-sm select-none pointer-events-none" : ""}>
+          <PhishingLab />
+        </div>
+      </div>
 
       {/* Row 11: Binary System Clock */}
       <div className="max-w-md mx-auto">

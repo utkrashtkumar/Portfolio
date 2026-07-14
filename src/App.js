@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { getSupabase } from './supabaseClient.js';
 import { 
   Palette, Leaf, Menu, X, ArrowUp, Lock, Unlock, HelpCircle, 
-  ChevronRight, Terminal, Activity, Shield, Cpu, Network
+  ChevronRight, Terminal, Activity, Shield, Cpu, Network, User, ArrowLeft
 } from 'lucide-react';
 
 // Subpages
@@ -17,6 +17,8 @@ import Ctf from './pages/Ctf.js';
 import Labs from './pages/Labs.js';
 import Portal from './pages/Portal.js';
 import Contact from './pages/Contact.js';
+import Profile from './pages/Profile.js';
+import Premium from './pages/Premium.js';
 
 // ============================================================
 // COMPONENT DECLARATIONS (PORTED DIRECTLY FROM ORIGINAL App.js)
@@ -135,10 +137,14 @@ const HexGridBackground = () => {
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
 
+    let needsRedraw = true;
+    let lastTheme = "";
+
     const handleResize = () => {
       if (!canvas) return;
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
+      needsRedraw = true;
     };
     window.addEventListener("resize", handleResize);
 
@@ -150,43 +156,67 @@ const HexGridBackground = () => {
     let mouseY = -1000;
 
     const handleMouseMove = (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
+      if (mouseX !== e.clientX || mouseY !== e.clientY) {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        needsRedraw = true;
+      }
     };
     window.addEventListener("mousemove", handleMouseMove);
 
-    const drawHexagon = (x, y, radius, alpha) => {
-      ctx.beginPath();
-      for (let i = 0; i < 6; i++) {
-        const angle = i * Math.PI / 3;
-        ctx.lineTo(x + radius * Math.cos(angle), y + radius * Math.sin(angle));
-      }
-      ctx.closePath();
-      ctx.strokeStyle = `rgba(74, 222, 128, ${alpha})`;
-      ctx.stroke();
-    };
+    // Precompute vertex offsets to avoid Math.cos/Math.sin calculations on every frame / hexagon
+    const hexRadiusEff = hexRadius - 2;
+    const hexOffsets = Array.from({ length: 6 }, (_, i) => {
+      const angle = i * Math.PI / 3;
+      return {
+        x: hexRadiusEff * Math.cos(angle),
+        y: hexRadiusEff * Math.sin(angle)
+      };
+    });
 
     const render = () => {
-      ctx.clearRect(0, 0, width, height);
-      ctx.lineWidth = 0.5;
-      const cols = Math.ceil(width / horizDist) + 1;
-      const rows = Math.ceil(height / vertDist) + 1;
-      for (let c = 0; c < cols; c++) {
-        for (let r = 0; r < rows; r++) {
-          const x = c * horizDist;
-          let y = r * vertDist;
-          if (c % 2 === 1) {
-            y += vertDist / 2;
+      const currentTheme = document.documentElement.getAttribute("data-theme") || "matrix";
+      if (currentTheme !== lastTheme) {
+        lastTheme = currentTheme;
+        needsRedraw = true;
+      }
+
+      if (needsRedraw) {
+        ctx.clearRect(0, 0, width, height);
+        ctx.lineWidth = 0.5;
+        const rgb = themeRgb[currentTheme] || "74, 222, 128";
+
+        const cols = Math.ceil(width / horizDist) + 1;
+        const rows = Math.ceil(height / vertDist) + 1;
+
+        for (let c = 0; c < cols; c++) {
+          for (let r = 0; r < rows; r++) {
+            const x = c * horizDist;
+            let y = r * vertDist;
+            if (c % 2 === 1) {
+              y += vertDist / 2;
+            }
+            const dx = x - mouseX;
+            const dy = y - mouseY;
+            const distSq = dx * dx + dy * dy; // Fast check using squared distance
+            
+            let alpha = 0.012;
+            if (distSq < 32400) { // 180^2
+              const dist = Math.sqrt(distSq);
+              alpha += (1 - dist / 180) * 0.12;
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(x + hexOffsets[0].x, y + hexOffsets[0].y);
+            for (let i = 1; i < 6; i++) {
+              ctx.lineTo(x + hexOffsets[i].x, y + hexOffsets[i].y);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = `rgba(${rgb}, ${alpha})`;
+            ctx.stroke();
           }
-          const dx = x - mouseX;
-          const dy = y - mouseY;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          let alpha = 0.012;
-          if (dist < 180) {
-            alpha += (1 - dist / 180) * 0.12;
-          }
-          drawHexagon(x, y, hexRadius - 2, alpha);
         }
+        needsRedraw = false;
       }
       animationFrameId = requestAnimationFrame(render);
     };
@@ -198,7 +228,8 @@ const HexGridBackground = () => {
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
-  return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none opacity-50" />;
+
+  return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none opacity-45" />;
 };
 
 const BootScreen = ({ onComplete }) => {
@@ -554,20 +585,59 @@ export default function App() {
 
   // Initialize Auth session checking
   useEffect(() => {
+    let authSubscription = null;
     const checkAuth = async () => {
       try {
         const supabase = getSupabase();
         if (supabase) {
           const { data: { session } } = await supabase.auth.getSession();
+          // Check if this is a signup confirmation redirect in the URL hash
+          const isSignupConfirmation = window.location.hash.includes('type=signup');
+          
+          if (isSignupConfirmation && session) {
+            // Force sign out immediately to prevent auto-login
+            await supabase.auth.signOut();
+            window.location.hash = ''; // Clear hash
+            navigate('/portal?confirmed=true');
+            return;
+          }
+
           if (session) {
             setAuthUser(session.user);
             setAuthSession(session);
           }
+
+          // Listen to changes
+          const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+            const isSignupHash = window.location.hash.includes('type=signup');
+            if (isSignupHash && currentSession) {
+              await supabase.auth.signOut();
+              window.location.hash = '';
+              setAuthUser(null);
+              setAuthSession(null);
+              navigate('/portal?confirmed=true');
+              return;
+            }
+
+            if (currentSession) {
+              setAuthUser(currentSession.user);
+              setAuthSession(currentSession);
+            } else {
+              setAuthUser(null);
+              setAuthSession(null);
+            }
+          });
+          authSubscription = subscription;
         }
       } catch (e) {}
     };
     checkAuth();
-  }, []);
+    return () => {
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
+    };
+  }, [navigate]);
 
   // Sync analytics states with custom updates (e.g. from the terminal component)
   useEffect(() => {
@@ -704,6 +774,7 @@ export default function App() {
       "/ctf": "CTF Intrusion containment | Utkrasht Kumar",
       "/labs": "Interactive Laboratories | Utkrasht Kumar",
       "/portal": "Secure Access Portal | Utkrasht Kumar",
+      "/profile": "Agent Profile Console | Utkrasht Kumar",
       "/contact": "Secure Pipeline & Handshake | Contact Utkrasht Kumar"
     };
     document.title = titleMap[location.pathname] || "Utkrasht Kumar | Cybersecurity Analyst";
@@ -717,6 +788,20 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setIsMobileMenuOpen(false);
   };
+
+  const navItems = [
+    { label: "Terminal", path: "/" },
+    { label: "Tools", path: "/tools" },
+    { label: "Skills", path: "/skills" },
+    { label: "Projects", path: "/projects" },
+    { label: "Timeline", path: "/timeline" },
+    { label: "CTF", path: "/ctf" },
+    { label: "Labs", path: "/labs" },
+    ...(authUser ? [{ label: "Premium", path: "/premium" }] : []),
+    { label: "Portal", path: "/portal" },
+    ...(authUser ? [{ label: "Profile", path: "/profile" }] : []),
+    { label: "Contact", path: "/contact" }
+  ];
 
   return (
     <>
@@ -743,17 +828,7 @@ export default function App() {
         
         {/* Desktop Nav */}
         <ul className="hidden md:flex gap-6 lg:gap-8 list-none m-0 p-0">
-          {[
-            { label: "Terminal", path: "/" },
-            { label: "Tools", path: "/tools" },
-            { label: "Skills", path: "/skills" },
-            { label: "Projects", path: "/projects" },
-            { label: "Timeline", path: "/timeline" },
-            { label: "CTF", path: "/ctf" },
-            { label: "Labs", path: "/labs" },
-            { label: "Portal", path: "/portal" },
-            { label: "Contact", path: "/contact" }
-          ].map((item) => (
+          {navItems.map((item) => (
             <li key={item.label}>
               <NavLink
                 to={item.path}
@@ -775,6 +850,40 @@ export default function App() {
             <div className="w-2 h-2 rounded-full bg-brand-green shadow-[0_0_8px_var(--color-brand-green)] animate-blink" />
             <a href="https://www.linkedin.com/in/utkrashtkumar/" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-brand-cyan transition-colors">Available for hire</a>
           </div>
+
+          {!authUser && (
+            <div className="flex items-center gap-3">
+              <span className="hidden lg:inline font-mono text-[0.6rem] text-slate-500 uppercase tracking-wider">
+                ⚡ Login or signup to access premium features (100% Free)
+              </span>
+              <Link
+                to="/portal"
+                onClick={handleNavLinkClick}
+                className="px-2.5 py-1 bg-brand-cyan/15 hover:bg-brand-cyan/25 border border-brand-cyan/35 text-brand-cyan font-mono text-[0.58rem] rounded uppercase font-bold tracking-wider cursor-pointer active:scale-95 transition-all no-underline shrink-0 animate-pulse hover:animate-none"
+              >
+                Sign In / Sign Up
+              </Link>
+            </div>
+          )}
+
+          {authUser && (
+            <Link
+              to="/profile"
+              onClick={handleNavLinkClick}
+              className="w-9 h-9 rounded-full overflow-hidden border border-brand-cyan/25 hover:border-brand-cyan/50 transition-colors flex items-center justify-center bg-black/40 cursor-pointer"
+              title="View Profile / Account Settings"
+            >
+              {authUser.user_metadata?.avatar_url ? (
+                <img
+                  src={authUser.user_metadata.avatar_url}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-4.5 h-4.5 text-brand-cyan" />
+              )}
+            </Link>
+          )}
 
           {/* Mobile Menu Toggle */}
           <button
@@ -798,17 +907,7 @@ export default function App() {
             className="fixed inset-0 top-[109px] z-[90] bg-[var(--bg-base)]/95 backdrop-blur-2xl border-b border-brand-cyan/10 flex flex-col items-center justify-center p-6 md:hidden"
           >
             <ul className="flex flex-col gap-6 text-center list-none p-0 m-0 w-full">
-              {[
-                { label: "Terminal", path: "/" },
-                { label: "Tools", path: "/tools" },
-                { label: "Skills", path: "/skills" },
-                { label: "Projects", path: "/projects" },
-                { label: "Timeline", path: "/timeline" },
-                { label: "CTF", path: "/ctf" },
-                { label: "Labs", path: "/labs" },
-                { label: "Portal", path: "/portal" },
-                { label: "Contact", path: "/contact" }
-              ].map((item) => (
+              {navItems.map((item) => (
                 <li key={item.label}>
                   <Link
                     to={item.path}
@@ -873,12 +972,13 @@ export default function App() {
                   setAuthSession={setAuthSession}
                 />
               } />
-              <Route path="/tools" element={<Tools />} />
-              <Route path="/skills" element={<Skills />} />
+              <Route path="/tools" element={<Tools authUser={authUser} />} />
+              <Route path="/skills" element={<Skills authUser={authUser} />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/timeline" element={<Timeline githubStats={githubStats} analytics={analytics} />} />
               <Route path="/ctf" element={<Ctf setCtfSolved={setCtfSolved} />} />
-              <Route path="/labs" element={<Labs ctfSolved={ctfSolved} />} />
+              <Route path="/labs" element={<Labs ctfSolved={ctfSolved} authUser={authUser} />} />
+              <Route path="/premium" element={<Premium authUser={authUser} />} />
               <Route path="/portal" element={
                 <Portal 
                   authUser={authUser} 
@@ -887,8 +987,28 @@ export default function App() {
                   setAuthSession={setAuthSession} 
                 />
               } />
+               <Route path="/profile" element={
+                <Profile 
+                  authUser={authUser} 
+                  setAuthUser={setAuthUser} 
+                  setAuthSession={setAuthSession} 
+                />
+              } />
               <Route path="/contact" element={<Contact ctfSolved={ctfSolved} />} />
             </Routes>
+
+            {location.pathname !== '/' && (
+              <div className="mt-12 pt-8 border-t border-white/5 flex justify-start animate-fadeIn">
+                <Link
+                  to="/"
+                  onClick={handleNavLinkClick}
+                  className="inline-flex items-center gap-2 font-mono text-xs text-slate-400 hover:text-brand-cyan hover:underline transition-colors cursor-pointer group"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 text-slate-500 group-hover:text-brand-cyan transition-colors" />
+                  <span>[BACK] Return to Terminal Console</span>
+                </Link>
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </main>

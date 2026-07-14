@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, useInView } from 'motion/react';
 import { Crosshair, Shield, Cpu } from 'lucide-react';
-import { SectionHeader } from '../components/Shared.js';
+import { SectionHeader, PremiumLock } from '../components/Shared.js';
 
 const SKILL_GROUPS = [
   {
@@ -29,6 +29,27 @@ const SKILL_GROUPS = [
       { name: "Cloud Security (AWS/GCP)", pct: 79, color: "from-brand-purple/40 to-brand-purple" },
       { name: "Reverse Engineering", pct: 76, color: "from-brand-purple/40 to-brand-purple" },
       { name: "Malware Analysis", pct: 83, color: "from-brand-purple/40 to-brand-purple" }
+    ]
+  }
+];
+
+const PREMIUM_SKILL_GROUPS = [
+  {
+    category: "Zero-Day Research",
+    icon: <Cpu className="w-5 h-5 text-brand-purple" />,
+    skills: [
+      { name: "Binary Exploits", pct: 89, color: "from-brand-purple/40 to-brand-purple" },
+      { name: "Kernel Debugging", pct: 82, color: "from-brand-purple/40 to-brand-purple" },
+      { name: "Fuzzing Engines", pct: 85, color: "from-brand-purple/40 to-brand-purple" }
+    ]
+  },
+  {
+    category: "Classified Ops / OSINT",
+    icon: <Crosshair className="w-5 h-5 text-red-500" />,
+    skills: [
+      { name: "Social Engineering", pct: 93, color: "from-red-500/40 to-red-500" },
+      { name: "Satellite OSINT", pct: 86, color: "from-red-500/40 to-red-500" },
+      { name: "Darknet Mapping", pct: 90, color: "from-red-500/40 to-red-500" }
     ]
   }
 ];
@@ -196,10 +217,12 @@ const SkillReticle = ({ skill, inView }) => {
   );
 };
 
-export default function Skills() {
+export default function Skills({ authUser }) {
   const [activeSkillView, setActiveSkillView] = useState('grid');
   const skillsRef = useRef(null);
   const skillsInView = useInView(skillsRef, { once: true, margin: "-100px" });
+
+  const isLoggedIn = !!authUser;
 
   return (
     <section id="skills" className="py-12 animate-fadeIn" ref={skillsRef}>
@@ -240,6 +263,43 @@ export default function Skills() {
               </div>
             </div>
           ))}
+
+          {/* Premium/Classified Skill Groups */}
+          {PREMIUM_SKILL_GROUPS.map((group, idx) => {
+            const isLocked = !isLoggedIn;
+
+            return (
+              <div key={`premium-${idx}`} className="glass-panel p-8 flex flex-col border border-brand-purple/20 relative overflow-hidden">
+                {isLocked && (
+                  <PremiumLock 
+                    title="CLASSIFIED CLEARANCE REQUIRED" 
+                    desc="Submit active portal security clearance credentials to decrypt advanced zero-day mapping and OSINT telemetry registers." 
+                  />
+                )}
+                
+                <div className={`flex flex-col h-full ${isLocked ? 'blur-sm select-none pointer-events-none' : ''}`}>
+                  <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-brand-purple/10 flex items-center justify-center border border-brand-purple/20">
+                        {group.icon}
+                      </div>
+                      <h3 className="font-display text-lg font-bold text-white">
+                        {group.category}
+                      </h3>
+                    </div>
+                    <span className="text-[0.52rem] font-bold font-mono tracking-widest text-brand-purple border border-brand-purple/20 bg-brand-purple/5 px-1.5 py-0.5 rounded">
+                      [CLASSIFIED]
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {group.skills.map((skill, skillIdx) => (
+                      <SkillReticle key={skillIdx} skill={skill} inView={skillsInView} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <SkillNetworkGraph />
