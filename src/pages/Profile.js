@@ -4,6 +4,127 @@ import { SectionHeader } from '../components/Shared.js';
 import { getSupabase } from '../supabaseClient.js';
 import { useNavigate } from 'react-router-dom';
 
+const COUNTRIES = [
+  { name: 'Afghanistan', code: '+93', maxLength: 9, placeholder: '70 123 4567' },
+  { name: 'Albania', code: '+355', maxLength: 9, placeholder: '68 123 4567' },
+  { name: 'Algeria', code: '+213', maxLength: 9, placeholder: '550 123 456' },
+  { name: 'Andorra', code: '+376', maxLength: 6, placeholder: '312 345' },
+  { name: 'Angola', code: '+244', maxLength: 9, placeholder: '912 345 678' },
+  { name: 'Argentina', code: '+54', maxLength: 10, placeholder: '11 1234 5678' },
+  { name: 'Armenia', code: '+374', maxLength: 8, placeholder: '91 123456' },
+  { name: 'Australia', code: '+61', maxLength: 9, placeholder: '412 345 678' },
+  { name: 'Austria', code: '+43', maxLength: 10, placeholder: '660 1234567' },
+  { name: 'Azerbaijan', code: '+994', maxLength: 9, placeholder: '50 123 45 67' },
+  { name: 'Bahrain', code: '+973', maxLength: 8, placeholder: '3123 4567' },
+  { name: 'Bangladesh', code: '+880', maxLength: 10, placeholder: '1712 345678' },
+  { name: 'Belarus', code: '+375', maxLength: 9, placeholder: '29 123 45 67' },
+  { name: 'Belgium', code: '+32', maxLength: 9, placeholder: '470 12 34 56' },
+  { name: 'Bhutan', code: '+975', maxLength: 8, placeholder: '17 123456' },
+  { name: 'Bolivia', code: '+591', maxLength: 8, placeholder: '712 34567' },
+  { name: 'Brazil', code: '+55', maxLength: 11, placeholder: '11 91234 5678' },
+  { name: 'Brunei', code: '+673', maxLength: 7, placeholder: '812 3456' },
+  { name: 'Bulgaria', code: '+359', maxLength: 9, placeholder: '87 123 4567' },
+  { name: 'Cambodia', code: '+855', maxLength: 9, placeholder: '12 345 678' },
+  { name: 'Canada', code: '+1', maxLength: 10, placeholder: '416 555 0199' },
+  { name: 'Chile', code: '+56', maxLength: 9, placeholder: '9 1234 5678' },
+  { name: 'China', code: '+86', maxLength: 11, placeholder: '139 1234 5678' },
+  { name: 'Colombia', code: '+57', maxLength: 10, placeholder: '300 123 4567' },
+  { name: 'Costa Rica', code: '+506', maxLength: 8, placeholder: '8123 4567' },
+  { name: 'Croatia', code: '+385', maxLength: 9, placeholder: '91 123 4567' },
+  { name: 'Cuba', code: '+53', maxLength: 8, placeholder: '5123 4567' },
+  { name: 'Cyprus', code: '+357', maxLength: 8, placeholder: '99 123456' },
+  { name: 'Czech Republic', code: '+420', maxLength: 9, placeholder: '712 345 678' },
+  { name: 'Denmark', code: '+45', maxLength: 8, placeholder: '12 34 56 78' },
+  { name: 'Egypt', code: '+20', maxLength: 10, placeholder: '100 123 4567' },
+  { name: 'Estonia', code: '+372', maxLength: 8, placeholder: '5123 4567' },
+  { name: 'Ethiopia', code: '+251', maxLength: 9, placeholder: '91 123 4567' },
+  { name: 'Finland', code: '+358', maxLength: 10, placeholder: '40 123 4567' },
+  { name: 'France', code: '+33', maxLength: 9, placeholder: '612 345 678' },
+  { name: 'Georgia', code: '+995', maxLength: 9, placeholder: '599 12 34 56' },
+  { name: 'Germany', code: '+49', maxLength: 11, placeholder: '151 23456789' },
+  { name: 'Greece', code: '+30', maxLength: 10, placeholder: '691 234 5678' },
+  { name: 'Hong Kong', code: '+852', maxLength: 8, placeholder: '9123 4567' },
+  { name: 'Hungary', code: '+36', maxLength: 9, placeholder: '20 123 4567' },
+  { name: 'Iceland', code: '+354', maxLength: 7, placeholder: '812 3456' },
+  { name: 'India', code: '+91', maxLength: 10, placeholder: '98765 43210' },
+  { name: 'Indonesia', code: '+62', maxLength: 12, placeholder: '812 3456 7890' },
+  { name: 'Iran', code: '+98', maxLength: 10, placeholder: '912 345 6789' },
+  { name: 'Iraq', code: '+964', maxLength: 10, placeholder: '770 123 4567' },
+  { name: 'Ireland', code: '+353', maxLength: 9, placeholder: '87 123 4567' },
+  { name: 'Israel', code: '+972', maxLength: 9, placeholder: '50 123 4567' },
+  { name: 'Italy', code: '+39', maxLength: 10, placeholder: '312 345 6789' },
+  { name: 'Japan', code: '+81', maxLength: 10, placeholder: '90 1234 5678' },
+  { name: 'Jordan', code: '+962', maxLength: 9, placeholder: '7 9123 4567' },
+  { name: 'Kazakhstan', code: '+7', maxLength: 10, placeholder: '701 123 4567' },
+  { name: 'Kenya', code: '+254', maxLength: 9, placeholder: '712 345678' },
+  { name: 'Kuwait', code: '+965', maxLength: 8, placeholder: '9123 4567' },
+  { name: 'Kyrgyzstan', code: '+996', maxLength: 9, placeholder: '555 123 456' },
+  { name: 'Latvia', code: '+371', maxLength: 8, placeholder: '2123 4567' },
+  { name: 'Lebanon', code: '+961', maxLength: 8, placeholder: '70 123 456' },
+  { name: 'Libya', code: '+218', maxLength: 9, placeholder: '91 123 4567' },
+  { name: 'Liechtenstein', code: '+423', maxLength: 7, placeholder: '712 3456' },
+  { name: 'Lithuania', code: '+370', maxLength: 8, placeholder: '612 34567' },
+  { name: 'Luxembourg', code: '+352', maxLength: 9, placeholder: '621 123 456' },
+  { name: 'Macau', code: '+853', maxLength: 8, placeholder: '6123 4567' },
+  { name: 'Malaysia', code: '+60', maxLength: 10, placeholder: '12 345 6789' },
+  { name: 'Maldives', code: '+960', maxLength: 7, placeholder: '712 3456' },
+  { name: 'Malta', code: '+356', maxLength: 8, placeholder: '9912 3456' },
+  { name: 'Mauritius', code: '+230', maxLength: 8, placeholder: '5123 4567' },
+  { name: 'Mexico', code: '+52', maxLength: 10, placeholder: '55 1234 5678' },
+  { name: 'Moldova', code: '+373', maxLength: 8, placeholder: '612 34567' },
+  { name: 'Monaco', code: '+377', maxLength: 8, placeholder: '6 1234 567' },
+  { name: 'Mongolia', code: '+976', maxLength: 8, placeholder: '9912 3456' },
+  { name: 'Montenegro', code: '+382', maxLength: 8, placeholder: '67 123 456' },
+  { name: 'Morocco', code: '+212', maxLength: 9, placeholder: '612 345678' },
+  { name: 'Myanmar', code: '+95', maxLength: 9, placeholder: '9 1234 5678' },
+  { name: 'Nepal', code: '+977', maxLength: 10, placeholder: '981 2345678' },
+  { name: 'Netherlands', code: '+31', maxLength: 9, placeholder: '6 1234 5678' },
+  { name: 'New Zealand', code: '+64', maxLength: 9, placeholder: '21 123 4567' },
+  { name: 'Nigeria', code: '+234', maxLength: 10, placeholder: '803 123 4567' },
+  { name: 'North Macedonia', code: '+389', maxLength: 8, placeholder: '70 123 456' },
+  { name: 'Norway', code: '+47', maxLength: 8, placeholder: '912 34 567' },
+  { name: 'Oman', code: '+968', maxLength: 8, placeholder: '9123 4567' },
+  { name: 'Pakistan', code: '+92', maxLength: 10, placeholder: '300 1234567' },
+  { name: 'Palestine', code: '+970', maxLength: 9, placeholder: '59 123 4567' },
+  { name: 'Panama', code: '+507', maxLength: 8, placeholder: '6123 4567' },
+  { name: 'Paraguay', code: '+595', maxLength: 9, placeholder: '981 123 456' },
+  { name: 'Peru', code: '+51', maxLength: 9, placeholder: '912 345 678' },
+  { name: 'Philippines', code: '+63', maxLength: 10, placeholder: '917 123 4567' },
+  { name: 'Poland', code: '+48', maxLength: 9, placeholder: '501 234 567' },
+  { name: 'Portugal', code: '+351', maxLength: 9, placeholder: '912 345 678' },
+  { name: 'Qatar', code: '+974', maxLength: 8, placeholder: '3312 3456' },
+  { name: 'Romania', code: '+40', maxLength: 9, placeholder: '712 345 678' },
+  { name: 'Russia', code: '+7', maxLength: 10, placeholder: '912 345 6789' },
+  { name: 'Saudi Arabia', code: '+966', maxLength: 9, placeholder: '50 123 4567' },
+  { name: 'Serbia', code: '+381', maxLength: 9, placeholder: '61 123 4567' },
+  { name: 'Singapore', code: '+65', maxLength: 8, placeholder: '8123 4567' },
+  { name: 'Slovakia', code: '+421', maxLength: 9, placeholder: '912 345 678' },
+  { name: 'Slovenia', code: '+386', maxLength: 8, placeholder: '41 123 456' },
+  { name: 'South Africa', code: '+27', maxLength: 9, placeholder: '82 123 4567' },
+  { name: 'South Korea', code: '+82', maxLength: 10, placeholder: '10 1234 5678' },
+  { name: 'Spain', code: '+34', maxLength: 9, placeholder: '612 345 678' },
+  { name: 'Sri Lanka', code: '+94', maxLength: 9, placeholder: '71 123 4567' },
+  { name: 'Sweden', code: '+46', maxLength: 9, placeholder: '70 123 4567' },
+  { name: 'Switzerland', code: '+41', maxLength: 9, placeholder: '79 123 45 67' },
+  { name: 'Taiwan', code: '+886', maxLength: 9, placeholder: '912 345 678' },
+  { name: 'Tajikistan', code: '+992', maxLength: 9, placeholder: '91 234 5678' },
+  { name: 'Thailand', code: '+66', maxLength: 9, placeholder: '81 234 5678' },
+  { name: 'Tunisia', code: '+216', maxLength: 8, placeholder: '21 234 567' },
+  { name: 'Turkey', code: '+90', maxLength: 10, placeholder: '532 123 4567' },
+  { name: 'Turkmenistan', code: '+993', maxLength: 8, placeholder: '61 234567' },
+  { name: 'Ukraine', code: '+380', maxLength: 9, placeholder: '50 123 4567' },
+  { name: 'United Arab Emirates', code: '+971', maxLength: 9, placeholder: '50 123 4567' },
+  { name: 'United Kingdom', code: '+44', maxLength: 10, placeholder: '7911 123456' },
+  { name: 'United States', code: '+1', maxLength: 10, placeholder: '202 555 0199' },
+  { name: 'Uruguay', code: '+598', maxLength: 9, placeholder: '99 123 456' },
+  { name: 'Uzbekistan', code: '+998', maxLength: 9, placeholder: '90 123 4567' },
+  { name: 'Vatican City', code: '+379', maxLength: 10, placeholder: '06 69812345' },
+  { name: 'Venezuela', code: '+58', maxLength: 10, placeholder: '412 123 4567' },
+  { name: 'Vietnam', code: '+84', maxLength: 9, placeholder: '91 234 5678' },
+  { name: 'Yemen', code: '+967', maxLength: 9, placeholder: '71 234 5678' },
+  { name: 'Zimbabwe', code: '+263', maxLength: 9, placeholder: '71 234 5678' }
+];
+
 const PRESET_AVATARS = [
   {
     name: 'Cyber Skull',
@@ -34,6 +155,7 @@ export default function Profile({ authUser, setAuthUser, setAuthSession }) {
   // Profile forms state
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
+  const [mobileCode, setMobileCode] = useState('+91');
   const [avatarUrl, setAvatarUrl] = useState('');
   
   // Password and email updates state
@@ -47,6 +169,24 @@ export default function Profile({ authUser, setAuthUser, setAuthSession }) {
   const [logs, setLogs] = useState([]);
   const [busy, setBusy] = useState(false);
 
+  const selectedCountry = COUNTRIES.find(c => c.code === mobileCode) || COUNTRIES[0];
+
+  const handleMobileChange = (e) => {
+    const val = e.target.value.replace(/\D/g, '');
+    if (val.length <= selectedCountry.maxLength) {
+      setMobile(val);
+    }
+  };
+
+  const handleCountryCodeChange = (e) => {
+    const newCode = e.target.value;
+    setMobileCode(newCode);
+    const targetCountry = COUNTRIES.find(c => c.code === newCode) || COUNTRIES[0];
+    if (mobile.length > targetCountry.maxLength) {
+      setMobile(mobile.slice(0, targetCountry.maxLength));
+    }
+  };
+
   useEffect(() => {
     if (!authUser) {
       navigate('/portal');
@@ -54,7 +194,20 @@ export default function Profile({ authUser, setAuthUser, setAuthSession }) {
     }
     // Set initial profile states from user metadata
     setName(authUser.user_metadata?.name || '');
-    setMobile(authUser.user_metadata?.mobile || '');
+    
+    const rawMobile = authUser.user_metadata?.mobile || '';
+    let parsedCode = '+91';
+    let parsedDigits = rawMobile;
+    
+    const sortedCountries = [...COUNTRIES].sort((a, b) => b.code.length - a.code.length);
+    const matched = sortedCountries.find(c => rawMobile.startsWith(c.code));
+    if (matched) {
+      parsedCode = matched.code;
+      parsedDigits = rawMobile.slice(matched.code.length).replace(/\s/g, '');
+    }
+    
+    setMobileCode(parsedCode);
+    setMobile(parsedDigits);
     setAvatarUrl(authUser.user_metadata?.avatar_url || '');
     setLogs(['[+] Syncing profile registries from remote auth schemas...', '[SUCCESS] Connection stable. Ready for modification.']);
   }, [authUser, navigate]);
@@ -132,15 +285,37 @@ export default function Profile({ authUser, setAuthUser, setAuthSession }) {
       return;
     }
 
+    if (mobile.trim().length !== selectedCountry.maxLength) {
+      setErrorMsg(`Mobile number must be exactly ${selectedCountry.maxLength} digits for ${selectedCountry.name}.`);
+      return;
+    }
+
     setBusy(true);
     setLogs(prev => [...prev, '[~] Launching profile modification sequence...', '[~] Uploading metadata payload mapping to Auth database...']);
     await new Promise(r => setTimeout(r, 600));
 
     try {
+      const fullMobile = `${mobileCode}${mobile.trim()}`;
+      // Check if mobile number is already taken
+      const currentMobile = authUser.user_metadata?.mobile || '';
+      if (fullMobile !== currentMobile) {
+        const { data: checkData, error: checkError } = await supabase.rpc('check_credentials_exist', {
+          p_email: '',
+          p_mobile: fullMobile
+        });
+
+        if (!checkError && checkData && checkData.length > 0) {
+          const { mobile_exists } = checkData[0];
+          if (mobile_exists) {
+            throw new Error('already registered with mobile number');
+          }
+        }
+      }
+
       const { data: { user }, error } = await supabase.auth.updateUser({
         data: {
           name: name.trim(),
-          mobile: mobile.trim(),
+          mobile: fullMobile,
           avatar_url: avatarUrl
         }
       });
@@ -183,6 +358,19 @@ export default function Profile({ authUser, setAuthUser, setAuthSession }) {
     await new Promise(r => setTimeout(r, 600));
 
     try {
+      // Check if the target email is already in use
+      const { data: checkData, error: checkError } = await supabase.rpc('check_credentials_exist', {
+        p_email: newEmail.trim(),
+        p_mobile: ''
+      });
+
+      if (!checkError && checkData && checkData.length > 0) {
+        const { email_exists } = checkData[0];
+        if (email_exists) {
+          throw new Error('already registered with email');
+        }
+      }
+
       const { error } = await supabase.auth.updateUser({
         email: newEmail.trim()
       });
@@ -355,18 +543,37 @@ export default function Profile({ authUser, setAuthUser, setAuthSession }) {
               </div>
 
               <div>
-                <label className="text-[0.52rem] text-slate-500 block mb-1 uppercase tracking-wider flex items-center gap-1 font-mono">
-                  <Phone className="w-3 h-3 text-slate-500" /> Mobile Number
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={mobile}
-                  onChange={e => setMobile(e.target.value)}
-                  disabled={busy}
-                  placeholder="+1 (555) 019-2834"
-                  className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded text-white outline-none focus:border-brand-cyan/40 transition-all font-mono text-xs"
-                />
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-[0.52rem] text-slate-500 block uppercase tracking-wider flex items-center gap-1 font-mono">
+                    <Phone className="w-3 h-3 text-slate-500" /> Mobile Number
+                  </label>
+                  <span className="text-[0.52rem] text-slate-500 font-mono">
+                    {mobile.length} / {selectedCountry.maxLength} digits
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <select
+                    value={mobileCode}
+                    onChange={handleCountryCodeChange}
+                    disabled={busy}
+                    className="w-28 px-2 py-2 bg-neutral-900/60 border border-white/10 rounded text-white outline-none focus:border-brand-cyan/40 transition-all font-mono disabled:opacity-40 text-xs"
+                  >
+                    {COUNTRIES.map(c => (
+                      <option key={c.name} value={c.code} className="bg-neutral-900 text-white">
+                        {c.code} ({c.name})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="tel"
+                    required
+                    value={mobile}
+                    onChange={handleMobileChange}
+                    disabled={busy}
+                    placeholder={selectedCountry.placeholder}
+                    className="flex-1 px-3 py-2 bg-black/40 border border-white/10 rounded text-white outline-none focus:border-brand-cyan/40 transition-all font-mono disabled:opacity-40 text-xs"
+                  />
+                </div>
               </div>
 
               <div className="sm:col-span-2">

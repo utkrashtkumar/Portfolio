@@ -126,8 +126,86 @@ CREATE TRIGGER cyber_news_updated_at
 -- ============================================================
 -- SELECT table_name FROM information_schema.tables
 -- WHERE table_schema = 'public'
---   AND table_name IN ('cyber_news', 'news_reactions', 'news_comments');
+--   AND table_name IN ('cyber_news', 'news_reactions', 'news_comments', 'profiles');
 -- ============================================================
+
+
+-- ─── 5. USER PROFILES & UNIQUE CREDENTIALS SYNC ───────────────
+
+-- Create public.profiles table to enforce uniqueness on mobile numbers and cache emails
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+  email text UNIQUE NOT NULL,
+  mobile text UNIQUE,
+  name text,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Enable RLS on profiles
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- Allow users to read their own profile
+CREATE POLICY "Allow users to read own profile"
+  ON public.profiles FOR SELECT
+  USING (auth.uid() = id);
+
+-- Allow users to update their own profile
+CREATE POLICY "Allow users to update own profile"
+  ON public.profiles FOR UPDATE
+  USING (auth.uid() = id);
+
+-- Function to synchronize auth.users metadata into public.profiles
+CREATE OR REPLACE FUNCTION public.handle_user_sync()
+RETURNS trigger AS $$
+DECLARE
+  m_phone text;
+BEGIN
+  m_phone := NULLIF(TRIM(new.raw_user_meta_data->>'mobile'), '');
+  
+  INSERT INTO public.profiles (id, email, mobile, name)
+  VALUES (
+    new.id,
+    new.email,
+    m_phone,
+    COALESCE(new.raw_user_meta_data->>'name', '')
+  )
+  ON CONFLICT (id) DO UPDATE
+  SET 
+    email = EXCLUDED.email,
+    mobile = EXCLUDED.mobile,
+    name = EXCLUDED.name;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to execute sync on insert/update in auth.users
+DROP TRIGGER IF EXISTS sync_profiles ON auth.users;
+CREATE TRIGGER sync_profiles
+  AFTER INSERT OR UPDATE ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_user_sync();
+
+-- Pre-populate existing users into the profiles table
+INSERT INTO public.profiles (id, email, mobile, name)
+SELECT 
+  id, 
+  email, 
+  NULLIF(TRIM(raw_user_meta_data->>'mobile'), ''),
+  COALESCE(raw_user_meta_data->>'name', '')
+FROM auth.users
+ON CONFLICT (id) DO NOTHING;
+
+-- Secure SECURITY DEFINER function to check if credentials exist (avoids data harvesting)
+CREATE OR REPLACE FUNCTION public.check_credentials_exist(p_email text, p_mobile text)
+RETURNS TABLE (email_exists boolean, mobile_exists boolean)
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    EXISTS (SELECT 1 FROM public.profiles WHERE LOWER(email) = LOWER(TRIM(p_email))) AS email_exists,
+    EXISTS (SELECT 1 FROM public.profiles WHERE mobile IS NOT NULL AND mobile = TRIM(p_mobile)) AS mobile_exists;
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- ============================================================
@@ -136,3 +214,4 @@ CREATE TRIGGER cyber_news_updated_at
 -- Bucket: news-images  | Public: YES
 -- Bucket: news-videos  | Public: YES
 -- ============================================================
+

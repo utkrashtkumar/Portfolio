@@ -595,8 +595,6 @@ export default function App() {
   }, [location.pathname]);
 
   // UI Telemetry
-  const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 });
-  const [isHoveringClickable, setIsHoveringClickable] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -744,25 +742,11 @@ export default function App() {
     const handleMouseMove = (e) => {
       document.documentElement.style.setProperty("--mouse-x", `${e.clientX}px`);
       document.documentElement.style.setProperty("--mouse-y", `${e.clientY}px`);
-      setMouseCoords({ x: e.clientX, y: e.clientY });
     };
     window.addEventListener("mousemove", handleMouseMove);
 
-    const hoverOn = () => setIsHoveringClickable(true);
-    const hoverOff = () => setIsHoveringClickable(false);
-    const updateHoverTriggers = () => {
-      const elements = document.querySelectorAll('button, a, input, select, textarea, [role="button"], .glass-panel');
-      elements.forEach((el) => {
-        el.addEventListener("mouseenter", hoverOn);
-        el.addEventListener("mouseleave", hoverOff);
-      });
-    };
-    updateHoverTriggers();
-    const interval = setInterval(updateHoverTriggers, 2000);
-
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
-      clearInterval(interval);
     };
   }, []);
 
@@ -1109,20 +1093,7 @@ export default function App() {
       <HackerBot />
       <TerminalOverlay isOpen={isOverlayTerminalOpen} onClose={() => setIsOverlayTerminalOpen(false)} />
 
-      {/* CUSTOM CURSOR CROSSHAIR */}
-      <div
-        className="hidden lg:block fixed w-8 h-8 rounded-full border border-brand-cyan/40 pointer-events-none z-[9999] transition-all duration-75 ease-out"
-        style={{
-          left: `${mouseCoords.x}px`,
-          top: `${mouseCoords.y}px`,
-          transform: `translate(-50%, -50%) scale(${isHoveringClickable ? 1.4 : 1})`,
-          borderColor: isHoveringClickable ? "var(--brand-purple)" : "var(--brand-cyan)",
-          boxShadow: isHoveringClickable ? "0 0 15px rgba(16, 185, 129, 0.4)" : "none",
-          backgroundColor: isHoveringClickable ? "rgba(16, 185, 129, 0.05)" : "transparent"
-        }}
-      >
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-brand-cyan shadow-[0_0_8px_var(--brand-cyan)]" />
-      </div>
+
     </>
   );
 }
