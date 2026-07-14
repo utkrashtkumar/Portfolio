@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { getSupabase } from './supabaseClient.js';
 import { 
   Palette, Leaf, Menu, X, ArrowUp, Lock, Unlock, HelpCircle, 
-  ChevronRight, Terminal, Activity, Shield, Cpu, Network, User, ArrowLeft
+  ChevronRight, Terminal, Activity, Shield, Cpu, Network, User, ArrowLeft, Bell, BellRing
 } from 'lucide-react';
 
 // Subpages
@@ -19,6 +19,8 @@ import Portal from './pages/Portal.js';
 import Contact from './pages/Contact.js';
 import Profile from './pages/Profile.js';
 import Premium from './pages/Premium.js';
+import News from './pages/News.js';
+import Admin from './pages/Admin.js';
 
 // ============================================================
 // COMPONENT DECLARATIONS (PORTED DIRECTLY FROM ORIGINAL App.js)
@@ -775,6 +777,8 @@ export default function App() {
       "/labs": "Interactive Laboratories | Utkrasht Kumar",
       "/portal": "Secure Access Portal | Utkrasht Kumar",
       "/profile": "Agent Profile Console | Utkrasht Kumar",
+      "/news": "Cyber Intel Feed | Utkrasht Kumar",
+      "/admin": "Admin Panel | Utkrasht Kumar",
       "/contact": "Secure Pipeline & Handshake | Contact Utkrasht Kumar"
     };
     document.title = titleMap[location.pathname] || "Utkrasht Kumar | Cybersecurity Analyst";
@@ -797,11 +801,28 @@ export default function App() {
     { label: "Timeline", path: "/timeline" },
     { label: "CTF", path: "/ctf" },
     { label: "Labs", path: "/labs" },
+    { label: "News", path: "/news" },
     ...(authUser ? [{ label: "Premium", path: "/premium" }] : []),
     { label: "Portal", path: "/portal" },
     ...(authUser ? [{ label: "Profile", path: "/profile" }] : []),
+    ...(authUser?.email === 'utkrashtkumar@gmail.com' ? [{ label: "Admin", path: "/admin" }] : []),
     { label: "Contact", path: "/contact" }
   ];
+
+  // Bell notification badge — new articles since last visit
+  const [bellCount, setBellCount] = useState(0);
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const lastVisited = localStorage.getItem('news_last_visited_at');
+    if (!lastVisited) return;
+    supabase
+      .from('cyber_news')
+      .select('id', { count: 'exact', head: true })
+      .eq('published', true)
+      .gt('created_at', lastVisited)
+      .then(({ count }) => { if (count > 0) setBellCount(count); });
+  }, [location.pathname]);
 
   return (
     <>
@@ -845,6 +866,25 @@ export default function App() {
 
         <div className="flex items-center gap-4">
           <ThemeSwitcher />
+
+          {/* Bell notification icon */}
+          <Link
+            to="/news"
+            onClick={() => { setBellCount(0); handleNavLinkClick(); }}
+            className="relative text-slate-400 hover:text-brand-cyan transition-colors"
+            title="Cyber Intel Feed"
+          >
+            {bellCount > 0 ? (
+              <BellRing className="w-4.5 h-4.5 text-brand-cyan animate-pulse" />
+            ) : (
+              <Bell className="w-4.5 h-4.5" />
+            )}
+            {bellCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-brand-pink text-white font-mono text-[0.45rem] font-bold rounded-full flex items-center justify-center">
+                {bellCount}
+              </span>
+            )}
+          </Link>
           
           <div className="hidden sm:flex items-center gap-2 font-mono text-[0.72rem] text-brand-green">
             <div className="w-2 h-2 rounded-full bg-brand-green shadow-[0_0_8px_var(--color-brand-green)] animate-blink" />
@@ -995,6 +1035,8 @@ export default function App() {
                 />
               } />
               <Route path="/contact" element={<Contact ctfSolved={ctfSolved} />} />
+              <Route path="/news" element={<News authUser={authUser} />} />
+              <Route path="/admin" element={<Admin authUser={authUser} />} />
             </Routes>
 
             {location.pathname !== '/' && (
