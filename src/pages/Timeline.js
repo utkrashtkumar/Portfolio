@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Github, Activity } from 'lucide-react';
+import { Shield, Github, Activity, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { SectionHeader } from '../components/Shared.js';
 
 const CERTS = [
@@ -150,7 +151,7 @@ const LiveSessionTimer = ({ sessionStart }) => {
   return <span>{seconds}s</span>;
 };
 
-export default function Timeline({ githubStats, analytics }) {
+export default function Timeline({ githubStats, analytics, ctfSolved, authUser }) {
   const [showAllCerts, setShowAllCerts] = useState(false);
   const [activeCertForChain, setActiveCertForChain] = useState(null);
 
@@ -175,25 +176,49 @@ export default function Timeline({ githubStats, analytics }) {
         <div className="lg:col-span-2 relative pl-8 border-l border-brand-cyan/20 space-y-12">
           <div className="absolute top-0 bottom-0 left-0 w-px bg-gradient-to-b from-brand-cyan via-brand-purple to-transparent" />
           
-          {EDUCATION.map((edu, i) => (
-            <div key={i} className="relative group">
-              <div className="absolute -left-[37px] top-1.5 w-4 h-4 rounded-full bg-[var(--bg-base)] border border-brand-cyan flex items-center justify-center">
-                <div className="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-ping" />
-              </div>
-              
-              <div className="glass-panel p-6 hover:border-brand-cyan/30 transition-all">
-                <span className="font-mono text-[0.72rem] text-brand-cyan uppercase tracking-widest block mb-1">
-                  {edu.date}
-                </span>
-                <h3 className="font-display text-xl font-bold text-white mb-2">
-                  {edu.degree}
-                </h3>
-                <p className="font-mono text-sm text-slate-300">
-                  {edu.school}
-                </p>
-              </div>
+          {!authUser ? (
+            <div className="glass-panel p-8 text-center space-y-4 border border-brand-purple/20 animate-fadeIn">
+              <Lock className="w-10 h-10 text-brand-purple mx-auto animate-pulse" />
+              <h4 className="font-display font-bold text-white uppercase tracking-wider text-sm">Educational Details Locked</h4>
+              <p className="text-slate-400 font-sans text-[0.62rem] max-w-sm mx-auto leading-relaxed">
+                Academic credentials registry is locked under security clearance protocols.
+              </p>
+              <Link to="/portal" className="inline-block font-mono text-[0.65rem] text-brand-purple border border-brand-purple/30 rounded-lg px-5 py-2 hover:bg-brand-purple/10 transition-all no-underline cursor-pointer">
+                Sign up or sign in to access premium features
+              </Link>
             </div>
-          ))}
+          ) : !ctfSolved ? (
+            <div className="glass-panel p-8 text-center space-y-4 border border-brand-pink/20 animate-fadeIn">
+              <Shield className="w-10 h-10 text-brand-pink mx-auto animate-pulse" />
+              <h4 className="font-display font-bold text-white uppercase tracking-wider text-sm">Clearance Required</h4>
+              <p className="text-slate-400 font-sans text-[0.62rem] max-w-sm mx-auto leading-relaxed">
+                Complete security validation challenge to decrypt educational data node.
+              </p>
+              <Link to="/ctf" className="inline-block font-mono text-[0.65rem] text-brand-pink border border-brand-pink/30 rounded-lg px-5 py-2 hover:bg-brand-pink/10 transition-all no-underline cursor-pointer animate-pulse">
+                Solve CTF room to view the details
+              </Link>
+            </div>
+          ) : (
+            EDUCATION.map((edu, i) => (
+              <div key={i} className="relative group">
+                <div className="absolute -left-[37px] top-1.5 w-4 h-4 rounded-full bg-[var(--bg-base)] border border-brand-cyan flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-ping" />
+                </div>
+                
+                <div className="glass-panel p-6 hover:border-brand-cyan/30 transition-all">
+                  <span className="font-mono text-[0.72rem] text-brand-cyan uppercase tracking-widest block mb-1">
+                    {edu.date}
+                  </span>
+                  <h3 className="font-display text-xl font-bold text-white mb-2">
+                    {edu.degree}
+                  </h3>
+                  <p className="font-mono text-sm text-slate-300">
+                    {edu.school}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         <div className="space-y-6">

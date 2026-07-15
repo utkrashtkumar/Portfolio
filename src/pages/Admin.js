@@ -41,7 +41,7 @@ const StatCard = ({ icon, label, value, color }) => (
 );
 
 // ─── Inline Media Insert Bar ─────────────────────────────────────────────────
-const MediaInsertBar = ({ contentRef, onInsert, supabase }) => {
+const MediaInsertBar = ({ contentRef, onInsert, supabase, setError }) => {
   const imgFileRef = useRef(null);
   const videoFileRef = useRef(null);
   const [uploading, setUploading] = useState(null); // null | 'image' | 'video'
@@ -92,9 +92,14 @@ const MediaInsertBar = ({ contentRef, onInsert, supabase }) => {
 
   const uploadFile = async (file, bucket) => {
     if (!supabase) return null;
+    if (setError) setError('');
     const path = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
     const { data, error } = await supabase.storage.from(bucket).upload(path, file, { upsert: false });
-    if (error) { console.error(error); return null; }
+    if (error) { 
+      console.error(error); 
+      if (setError) setError(`Storage upload failed: ${error.message}. Ensure storage policies exist on your Supabase project.`);
+      return null; 
+    }
     const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(data.path);
     return publicUrl;
   };
@@ -214,11 +219,15 @@ const PostEditor = ({ post, supabase, onSaved, onCancel }) => {
     const file = e.target.files?.[0];
     if (!file || !supabase) return;
     setThumbUploading(true);
+    setError('');
     const path = `thumbs/${Date.now()}-${file.name.replace(/\s/g, '_')}`;
     const { data, error } = await supabase.storage.from('news-images').upload(path, file, { upsert: false });
     if (!error) {
       const { data: { publicUrl } } = supabase.storage.from('news-images').getPublicUrl(data.path);
       set('thumbnail_url', publicUrl);
+    } else {
+      console.error(error);
+      setError(`Thumbnail upload failed: ${error.message}. Ensure storage policies exist on your Supabase project.`);
     }
     setThumbUploading(false);
     e.target.value = '';
@@ -474,6 +483,7 @@ const PostEditor = ({ post, supabase, onSaved, onCancel }) => {
                 }
               }}
               supabase={supabase}
+              setError={setError}
             />
 
             {/* Content textarea */}

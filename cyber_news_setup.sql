@@ -209,9 +209,59 @@ $$ LANGUAGE plpgsql;
 
 
 -- ============================================================
--- STORAGE BUCKETS (do this in Supabase -> Storage -> New Bucket)
+-- STORAGE BUCKETS SETUP (Automatic initialization & RLS)
+-- Run this in Supabase -> SQL Editor to enable admin file uploads
 -- ============================================================
--- Bucket: news-images  | Public: YES
--- Bucket: news-videos  | Public: YES
--- ============================================================
+
+-- 1. Create buckets if they do not exist
+INSERT INTO storage.buckets (id, name, public)
+VALUES 
+  ('news-images', 'news-images', true),
+  ('news-videos', 'news-videos', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- 2. Drop existing policies to avoid duplicates
+DROP POLICY IF EXISTS "Allow public read access to news-images" ON storage.objects;
+DROP POLICY IF EXISTS "Allow admin insert access to news-images" ON storage.objects;
+DROP POLICY IF EXISTS "Allow admin update access to news-images" ON storage.objects;
+DROP POLICY IF EXISTS "Allow admin delete access to news-images" ON storage.objects;
+
+DROP POLICY IF EXISTS "Allow public read access to news-videos" ON storage.objects;
+DROP POLICY IF EXISTS "Allow admin insert access to news-videos" ON storage.objects;
+DROP POLICY IF EXISTS "Allow admin update access to news-videos" ON storage.objects;
+DROP POLICY IF EXISTS "Allow admin delete access to news-videos" ON storage.objects;
+
+-- 3. Create policies for news-images bucket
+CREATE POLICY "Allow public read access to news-images"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'news-images');
+
+CREATE POLICY "Allow admin insert access to news-images"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'news-images' AND (auth.jwt() ->> 'email') = 'utkrashtkumar@gmail.com');
+
+CREATE POLICY "Allow admin update access to news-images"
+  ON storage.objects FOR UPDATE
+  USING (bucket_id = 'news-images' AND (auth.jwt() ->> 'email') = 'utkrashtkumar@gmail.com');
+
+CREATE POLICY "Allow admin delete access to news-images"
+  ON storage.objects FOR DELETE
+  USING (bucket_id = 'news-images' AND (auth.jwt() ->> 'email') = 'utkrashtkumar@gmail.com');
+
+-- 4. Create policies for news-videos bucket
+CREATE POLICY "Allow public read access to news-videos"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'news-videos');
+
+CREATE POLICY "Allow admin insert access to news-videos"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'news-videos' AND (auth.jwt() ->> 'email') = 'utkrashtkumar@gmail.com');
+
+CREATE POLICY "Allow admin update access to news-videos"
+  ON storage.objects FOR UPDATE
+  USING (bucket_id = 'news-videos' AND (auth.jwt() ->> 'email') = 'utkrashtkumar@gmail.com');
+
+CREATE POLICY "Allow admin delete access to news-videos"
+  ON storage.objects FOR DELETE
+  USING (bucket_id = 'news-videos' AND (auth.jwt() ->> 'email') = 'utkrashtkumar@gmail.com');
 

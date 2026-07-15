@@ -264,25 +264,6 @@ const UserSessionDashboard = ({ user, session, onSignOut }) => {
               {logs.map((l, idx) => <div key={idx} className={l.startsWith('[SUCCESS]') ? 'text-brand-green' : ''}>{l}</div>)}
             </div>
           )}
-
-          <div className="space-y-2 mt-4">
-            <div className="text-slate-500 uppercase text-[0.5rem] font-bold">Ledger Records:</div>
-            {ledger.length === 0 ? (
-              <div className="text-slate-600 italic text-[0.58rem] py-2">No sign logs on this node.</div>
-            ) : (
-              <div className="max-h-[150px] overflow-y-auto divide-y divide-white/3 border border-white/5 rounded-lg bg-black/20">
-                {ledger.map((entry, i) => (
-                  <div key={i} className="p-2.5 text-[0.58rem] flex justify-between items-start">
-                    <div className="space-y-0.5">
-                      <span className="text-brand-cyan font-bold block">{entry.email}</span>
-                      <span className="text-white italic">"{entry.comment}"</span>
-                    </div>
-                    <span className="text-slate-600 text-[0.52rem] shrink-0">{entry.date}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>

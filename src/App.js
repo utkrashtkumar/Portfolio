@@ -554,6 +554,13 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Capture if this page load is a signup confirmation redirect synchronously before child components wipe search params/hash
+  const isSignupRef = useRef(typeof window !== 'undefined' && (
+    window.location.hash.includes('type=signup') ||
+    window.location.search.includes('type=signup') ||
+    (window.location.search.includes('confirmed=true') && (window.location.search.includes('code=') || window.location.hash.includes('access_token=')))
+  ));
+
   const [isBooting, setIsBooting] = useState(true);
   const [isBreached, setIsBreached] = useState(false);
   const [isOverlayTerminalOpen, setIsOverlayTerminalOpen] = useState(false);
@@ -608,12 +615,14 @@ export default function App() {
         if (supabase) {
           const { data: { session } } = await supabase.auth.getSession();
           // Check if this is a signup confirmation redirect
-          const isSignupConfirmation = window.location.hash.includes('type=signup') || 
+          const isSignupConfirmation = isSignupRef.current ||
+                                       window.location.hash.includes('type=signup') || 
                                        window.location.search.includes('type=signup') ||
                                        (window.location.search.includes('confirmed=true') && window.location.search.includes('code='));
           
           if (isSignupConfirmation && session) {
             // Force sign out immediately to prevent auto-login
+            isSignupRef.current = false;
             await supabase.auth.signOut();
             window.location.hash = ''; // Clear hash
             navigate('/portal?confirmed=true', { replace: true });
@@ -627,10 +636,12 @@ export default function App() {
 
           // Listen to changes
           const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-            const isSignupHash = window.location.hash.includes('type=signup') || 
+            const isSignupHash = isSignupRef.current ||
+                                 window.location.hash.includes('type=signup') || 
                                  window.location.search.includes('type=signup') ||
                                  (window.location.search.includes('confirmed=true') && window.location.search.includes('code='));
             if (isSignupHash && currentSession) {
+              isSignupRef.current = false;
               await supabase.auth.signOut();
               window.location.hash = '';
               setAuthUser(null);
@@ -1021,7 +1032,7 @@ export default function App() {
               <Route path="/tools" element={<Tools authUser={authUser} />} />
               <Route path="/skills" element={<Skills authUser={authUser} />} />
               <Route path="/projects" element={<Projects />} />
-              <Route path="/timeline" element={<Timeline githubStats={githubStats} analytics={analytics} />} />
+              <Route path="/timeline" element={<Timeline githubStats={githubStats} analytics={analytics} ctfSolved={ctfSolved} authUser={authUser} />} />
               <Route path="/ctf" element={<Ctf setCtfSolved={setCtfSolved} />} />
               <Route path="/labs" element={<Labs ctfSolved={ctfSolved} authUser={authUser} />} />
               <Route path="/premium" element={<Premium authUser={authUser} />} />

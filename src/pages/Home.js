@@ -257,11 +257,11 @@ export default function Home({
 
       {/* 4. OTHER COMBINED PORTFOLIO SECTIONS */}
       <RevealSection>
-        <Tools />
+        <Tools authUser={authUser} />
       </RevealSection>
 
       <RevealSection>
-        <Skills />
+        <Skills authUser={authUser} />
       </RevealSection>
 
       <RevealSection>
@@ -269,7 +269,7 @@ export default function Home({
       </RevealSection>
 
       <RevealSection>
-        <Timeline githubStats={githubStats} analytics={analytics} />
+        <Timeline githubStats={githubStats} analytics={analytics} ctfSolved={ctfSolved} authUser={authUser} />
       </RevealSection>
 
       <RevealSection>
