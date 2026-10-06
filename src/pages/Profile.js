@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { User, Phone, Mail, Lock, ShieldCheck, Sparkles, Upload, RefreshCw, LogOut, CheckCircle2 } from 'lucide-react';
 import { SectionHeader } from '../components/Shared.js';
 import { getSupabase } from '../supabaseClient.js';
+import { formatAuthError } from '../utils/authError.js';
 import { useNavigate } from 'react-router-dom';
 
 const COUNTRIES = [
@@ -326,7 +327,7 @@ export default function Profile({ authUser, setAuthUser, setAuthSession }) {
       setSuccessMsg('Profile records updated successfully!');
       setAuthUser(user);
     } catch (err) {
-      setErrorMsg(err.message || 'Failed to update profile details.');
+      setErrorMsg(formatAuthError(err, 'Failed to update profile details.'));
       setLogs(prev => [...prev, `[!] Modification pipeline failed: ${err.message}`]);
     }
     setBusy(false);
@@ -381,7 +382,7 @@ export default function Profile({ authUser, setAuthUser, setAuthSession }) {
       setSuccessMsg('Migration initiated. Check both inboxes to confirm email change.');
       setNewEmail('');
     } catch (err) {
-      setErrorMsg(err.message || 'Email update failed.');
+      setErrorMsg(formatAuthError(err, 'Email update failed.'));
       setLogs(prev => [...prev, `[!] Migration failed: ${err.message}`]);
     }
     setBusy(false);
@@ -424,7 +425,7 @@ export default function Profile({ authUser, setAuthUser, setAuthSession }) {
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
-      setErrorMsg(err.message || 'Password update failed.');
+      setErrorMsg(formatAuthError(err, 'Password update failed.'));
       setLogs(prev => [...prev, `[!] Handshake failed: ${err.message}`]);
     }
     setBusy(false);

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Lock, ShieldAlert } from 'lucide-react';
 import { SectionHeader } from '../components/Shared.js';
 import { getSupabase } from '../supabaseClient.js';
+import { formatAuthError } from '../utils/authError.js';
 import { useNavigate } from 'react-router-dom';
 
 export default function ResetPassword({ authUser, setAuthUser, setAuthSession }) {
@@ -55,7 +56,7 @@ export default function ResetPassword({ authUser, setAuthUser, setAuthSession })
       // Redirect to portal with reset success query parameter
       navigate('/portal?resetSuccess=true');
     } catch (err) {
-      setErrorMsg(err.message || 'Password update failed.');
+      setErrorMsg(formatAuthError(err, 'Password update failed.'));
       setLogs(prev => [...prev, `[!] Pipeline failed: ${err.message}`]);
       setBusy(false);
     }

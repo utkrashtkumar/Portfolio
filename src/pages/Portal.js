@@ -399,8 +399,9 @@ const UserSessionDashboard = ({ user, session, onSignOut }) => {
         setView('verify');
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Auth handshake failed.');
-      setLogs(prev => [...prev, `[!] Handshake failed: ${err.message}`]);
+      const formatted = formatAuthError(err, 'Auth handshake failed.');
+      setErrorMsg(formatted);
+      setLogs(prev => [...prev, `[!] Handshake failed: ${formatted}`]);
     }
     setBusy(false);
   };
