@@ -395,6 +395,24 @@ const UserSessionDashboard = ({ user, session, onSignOut }) => {
           }
         });
         if (error) throw error;
+
+        // Check if user already exists
+        if (data?.user?.identities && data.user.identities.length === 0) {
+          setErrorMsg('An account with this email is already registered. Please sign in instead.');
+          setLogs(prev => [...prev, '[!] User already registered with this email.']);
+          setBusy(false);
+          return;
+        }
+
+        // If email confirmation is disabled in Supabase, session is returned immediately
+        if (data?.session) {
+          setLogs(prev => [...prev, '[SUCCESS] Account created and authenticated successfully.']);
+          await new Promise(r => setTimeout(r, 400));
+          onAuthSuccess(data.user, data.session);
+          setBusy(false);
+          return;
+        }
+
         setLogs(prev => [...prev, '[SUCCESS] Account registry created. Verification sent.']);
         setView('verify');
       }
