@@ -285,3 +285,27 @@ main {
 .animate-slideDown {
   animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+/* ============================================================
+   EXECUTIVE CISO CORPORATE MODE
+   ============================================================ */
+[data-mode="executive"] {
+  --bg-base: #0b0f19 !important;
+  --brand-cyan: #38bdf8 !important;
+  --brand-green: #34d399 !important;
+  --brand-purple: #818cf8 !important;
+  --brand-pink: #f472b6 !important;
+  --bg-grad1: rgba(56, 189, 248, 0.04) !important;
+  --bg-grad2: rgba(129, 140, 248, 0.04) !important;
+  --bg-grad3: rgba(52, 211, 153, 0.02) !important;
+  --bg-grid: rgba(56, 189, 248, 0.025) !important;
+  --glass-line: rgba(56, 189, 248, 0.2) !important;
+}
+
+[data-mode="executive"] .scanline,
+[data-mode="executive"] .noise-overlay {
+  display: none !important;
+}
+
+[data-mode="executive"] * {
+  text-shadow: none !important;
+}

@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useInView } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { Radar, Zap, Shield, Network, Download } from 'lucide-react';
+import { Radar, Zap, Shield, Network, Download, Award } from 'lucide-react';
 import CommandTerminal from '../components/CommandTerminal.js';
+import ThreatMap from '../components/ThreatMap.js';
+import sound from '../utils/soundFx.js';
 import { RevealSection } from '../components/Shared.js';
 
 // Import all section pages to combine on Home screen
@@ -119,7 +121,10 @@ export default function Home({
   authUser,
   authSession,
   setAuthUser,
-  setAuthSession
+  setAuthSession,
+  onOpenBrowserAudit,
+  onOpenFieldTools,
+  onOpenRankModal
 }) {
   const navigate = useNavigate();
   const [avatar3D, setAvatar3D] = useState({ rotX: 0, rotY: 0, isFlipped: false });
@@ -254,6 +259,53 @@ export default function Home({
 
       {/* 3. SECURE COMMAND TERMINAL */}
       <CommandTerminal onTriggerBreach={onTriggerBreach} />
+
+      {/* 3.5. GLOBAL THREAT RADAR & TACTICAL QUICK ACTIONS */}
+      <RevealSection>
+        <div className="space-y-6 my-12">
+          <ThreatMap />
+
+          {/* QUICK TACTICAL ACTION BAR */}
+          <div className="bg-slate-900/80 border border-brand-cyan/20 rounded-2xl p-4 md:p-6 backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-4 font-mono text-xs shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+            <div className="flex items-center gap-3 text-slate-300">
+              <span className="w-2.5 h-2.5 rounded-full bg-brand-cyan animate-ping shrink-0" />
+              <div>
+                <span className="font-bold text-white uppercase tracking-wider">TACTICAL OPS CONSOLE</span>
+                <span className="text-slate-400 text-[0.7rem] block">Client-side hardening, diagnostics & field utilities</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
+              <button
+                onClick={() => { sound.play('scan'); onOpenBrowserAudit && onOpenBrowserAudit(); }}
+                className="px-3.5 py-2 rounded-xl bg-brand-cyan/10 hover:bg-brand-cyan/20 border border-brand-cyan/30 text-brand-cyan font-bold transition-all flex items-center gap-2 cursor-pointer active:scale-95 shadow-[0_0_15px_rgba(0,245,255,0.15)]"
+                title="Launch Browser Hardening Audit"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span>Audit Browser</span>
+              </button>
+
+              <button
+                onClick={() => { sound.play('beep'); onOpenFieldTools && onOpenFieldTools(); }}
+                className="px-3.5 py-2 rounded-xl bg-brand-purple/10 hover:bg-brand-purple/20 border border-brand-purple/30 text-brand-purple font-bold transition-all flex items-center gap-2 cursor-pointer active:scale-95 shadow-[0_0_15px_rgba(176,38,255,0.15)]"
+                title="Open Tactical Multi-Decoder & Subnet Calculator"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Field Tools (Hashes/CIDR)</span>
+              </button>
+
+              <button
+                onClick={() => { sound.play('beep'); onOpenRankModal && onOpenRankModal(); }}
+                className="px-3.5 py-2 rounded-xl bg-yellow-400/10 hover:bg-yellow-400/20 border border-yellow-400/30 text-yellow-400 font-bold transition-all flex items-center gap-2 cursor-pointer active:scale-95 shadow-[0_0_15px_rgba(250,204,21,0.15)]"
+                title="View Operative Clearance & Download Verified Certificate"
+              >
+                <Award className="w-3.5 h-3.5" />
+                <span>Clearance & Certificate</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </RevealSection>
 
       {/* 4. OTHER COMBINED PORTFOLIO SECTIONS */}
       <RevealSection>

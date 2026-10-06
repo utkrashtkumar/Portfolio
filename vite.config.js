@@ -12,6 +12,13 @@ export default defineConfig(({mode}) => {
       include: /src\/.*\.js$/,
       exclude: [],
     },
+    optimizeDeps: {
+      esbuildOptions: {
+        loader: {
+          '.js': 'jsx',
+        },
+      },
+    },
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },

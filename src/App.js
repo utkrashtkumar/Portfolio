@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { getSupabase } from './supabaseClient.js';
 import { 
   Palette, Leaf, Menu, X, ArrowUp, Lock, Unlock, HelpCircle, 
-  ChevronRight, Terminal, Activity, Shield, Cpu, Network, User, ArrowLeft, Bell, BellRing, LogOut, Linkedin
+  ChevronRight, Terminal, Activity, Shield, Cpu, Network, User, ArrowLeft, Bell, BellRing, LogOut, Linkedin, Volume2, VolumeX, Briefcase, Award, Trophy, Sparkles
 } from 'lucide-react';
 
 // Subpages
@@ -22,6 +22,13 @@ import Premium from './pages/Premium.js';
 import News from './pages/News.js';
 import Admin from './pages/Admin.js';
 import ResetPassword from './pages/ResetPassword.js';
+
+// Tactical Cyber Suite Components
+import CommandPalette from './components/CommandPalette.js';
+import AgentRankModal from './components/AgentRankModal.js';
+import BrowserSecurityInspector from './components/BrowserSecurityInspector.js';
+import FieldUtilities from './components/FieldUtilities.js';
+import sound from './utils/soundFx.js';
 
 // ============================================================
 // COMPONENT DECLARATIONS (PORTED DIRECTLY FROM ORIGINAL App.js)
@@ -566,6 +573,14 @@ export default function App() {
   const [isOverlayTerminalOpen, setIsOverlayTerminalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Tactical Cyber Suite States
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isExecutiveMode, setIsExecutiveMode] = useState(false);
+  const [isSoundMuted, setIsSoundMuted] = useState(sound.isMuted);
+  const [isRankModalOpen, setIsRankModalOpen] = useState(false);
+  const [isBrowserAuditModalOpen, setIsBrowserAuditModalOpen] = useState(false);
+  const [isFieldToolsModalOpen, setIsFieldToolsModalOpen] = useState(false);
+
   // Shared Data States
   const [visitorIntel, setVisitorIntel] = useState(null);
   const [githubStats, setGithubStats] = useState(null);
@@ -799,11 +814,50 @@ export default function App() {
     document.title = titleMap[location.pathname] || "Utkrasht Kumar | Cybersecurity Analyst";
   }, [location.pathname]);
 
+  // Restore Executive Mode & Listen for Universal Ctrl+K Spotlight Shortcut
+  useEffect(() => {
+    const savedExec = localStorage.getItem('executive_mode') === 'true';
+    if (savedExec) {
+      setIsExecutiveMode(true);
+      document.documentElement.setAttribute('data-mode', 'executive');
+    }
+
+    const handleGlobalKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, []);
+
   if (isBooting) {
     return <BootScreen onComplete={() => setIsBooting(false)} />;
   }
 
+
+
+  const toggleExecutiveMode = () => {
+    const next = !isExecutiveMode;
+    setIsExecutiveMode(next);
+    localStorage.setItem('executive_mode', next ? 'true' : 'false');
+    if (next) {
+      document.documentElement.setAttribute('data-mode', 'executive');
+    } else {
+      document.documentElement.removeAttribute('data-mode');
+    }
+    sound.play('modeSwitch');
+  };
+
+  const toggleSoundMute = () => {
+    const muted = sound.toggleMute();
+    setIsSoundMuted(muted);
+    if (!muted) sound.play('beep');
+  };
+
   const handleNavLinkClick = () => {
+    sound.play('beep');
     window.scrollTo({ top: 0, behavior: "smooth" });
     setIsMobileMenuOpen(false);
   };
@@ -878,6 +932,50 @@ export default function App() {
 
         <div className="flex items-center gap-4">
           <ThemeSwitcher />
+
+          {/* Quick Spotlight Trigger */}
+          <button
+            onClick={() => { sound.play('beep'); setIsCommandPaletteOpen(true); }}
+            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-brand-cyan font-mono text-[0.65rem] transition-colors cursor-pointer"
+            title="Open Command Spotlight (Ctrl + K)"
+          >
+            <Terminal className="w-3.5 h-3.5 text-brand-cyan" />
+            <span>Search</span>
+            <kbd className="px-1 py-0.5 rounded bg-black/60 border border-white/20 text-[0.55rem] text-slate-300">Ctrl K</kbd>
+          </button>
+
+          {/* Audio FX Synthesizer Mute / Unmute */}
+          <button
+            onClick={toggleSoundMute}
+            className="p-1.5 text-slate-400 hover:text-brand-cyan hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+            title={isSoundMuted ? "Unmute Tactical Sci-Fi Audio FX" : "Mute Audio FX"}
+          >
+            {isSoundMuted ? <VolumeX className="w-4 h-4 text-slate-500" /> : <Volume2 className="w-4 h-4 text-brand-cyan animate-pulse" />}
+          </button>
+
+          {/* Cyber Ops vs Executive CISO Mode Toggle */}
+          <button
+            onClick={toggleExecutiveMode}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.65rem] font-mono border transition-all cursor-pointer ${
+              isExecutiveMode 
+                ? 'bg-sky-500/20 text-sky-300 border-sky-400/40 shadow-[0_0_12px_rgba(56,189,248,0.3)]' 
+                : 'bg-white/5 text-slate-400 border-white/10 hover:text-brand-cyan hover:border-brand-cyan/30'
+            }`}
+            title={isExecutiveMode ? "Switch to Cyber Ops Neon HUD" : "Switch to Executive CISO Corporate Mode"}
+          >
+            <Briefcase className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{isExecutiveMode ? "EXECUTIVE" : "CYBER OPS"}</span>
+          </button>
+
+          {/* Agent Rank & Clearance Badge */}
+          <button
+            onClick={() => { sound.play('beep'); setIsRankModalOpen(true); }}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-yellow-400/10 hover:bg-yellow-400/20 border border-yellow-400/30 text-yellow-400 font-mono text-[0.65rem] transition-all cursor-pointer"
+            title="View Agent XP & Clearance Certificate"
+          >
+            <Trophy className="w-3.5 h-3.5" />
+            <span>RANK</span>
+          </button>
 
           {/* Bell notification icon */}
           <Link
@@ -1027,6 +1125,9 @@ export default function App() {
                   authSession={authSession}
                   setAuthUser={setAuthUser}
                   setAuthSession={setAuthSession}
+                  onOpenBrowserAudit={() => setIsBrowserAuditModalOpen(true)}
+                  onOpenFieldTools={() => setIsFieldToolsModalOpen(true)}
+                  onOpenRankModal={() => setIsRankModalOpen(true)}
                 />
               } />
               <Route path="/tools" element={<Tools authUser={authUser} />} />
@@ -1131,6 +1232,53 @@ export default function App() {
 
       <HackerBot />
       <TerminalOverlay isOpen={isOverlayTerminalOpen} onClose={() => setIsOverlayTerminalOpen(false)} />
+
+      {/* Universal Command Palette (Ctrl + K) */}
+      <CommandPalette 
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onTriggerBreach={() => setIsBreached(true)}
+        isExecutiveMode={isExecutiveMode}
+        onToggleExecutiveMode={toggleExecutiveMode}
+        onOpenBrowserAudit={() => setIsBrowserAuditModalOpen(true)}
+        onOpenFieldTools={() => setIsFieldToolsModalOpen(true)}
+        onOpenRankModal={() => setIsRankModalOpen(true)}
+      />
+
+      {/* Operative Clearance & XP Rank Modal */}
+      <AgentRankModal 
+        isOpen={isRankModalOpen}
+        onClose={() => setIsRankModalOpen(false)}
+        authUser={authUser}
+      />
+
+      {/* Modal for Tactical Field Utilities */}
+      <AnimatePresence>
+        {isFieldToolsModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+            <div className="w-full max-w-4xl">
+              <FieldUtilities onClose={() => setIsFieldToolsModalOpen(false)} />
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal for Browser Security Inspector */}
+      <AnimatePresence>
+        {isBrowserAuditModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+            <div className="w-full max-w-4xl relative">
+              <button 
+                onClick={() => setIsBrowserAuditModalOpen(false)}
+                className="absolute top-4 right-4 z-10 p-2 text-slate-400 hover:text-white bg-black/60 rounded-lg cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <BrowserSecurityInspector />
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
 
 
     </>

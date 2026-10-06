@@ -5,6 +5,8 @@ import {
   Terminal, Shield, Crosshair, Radar, Lock, Fingerprint, Activity, Zap, Cpu, Network, Key, ChevronRight, Monitor, Server, HelpCircle, Unlock, CheckCircle2, AlertCircle, Copy, Check, Play, RefreshCw, Eye, Search, AlertTriangle, HelpCircle as HelpIcon, PlayCircle, Mail
 } from 'lucide-react';
 import { SectionHeader, PremiumLock } from '../components/Shared.js';
+import BrowserSecurityInspector from '../components/BrowserSecurityInspector.js';
+import FieldUtilities from '../components/FieldUtilities.js';
 
 // ============================================================
 // CORE CRYPTO HELPERS
@@ -1578,6 +1580,24 @@ export default function Labs({ ctfSolved, authUser }) {
       {/* Row 11: Binary System Clock */}
       <div className="max-w-md mx-auto">
         <BinaryClock />
+      </div>
+
+      {/* Row 12: Client-Side Browser Security & Fingerprint Hardening */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-brand-cyan font-bold font-mono text-xs uppercase tracking-wider">
+          <Shield className="w-4 h-4 text-brand-cyan" />
+          <span>Interactive Audit // Browser Fingerprint & Privacy Inspector</span>
+        </div>
+        <BrowserSecurityInspector />
+      </div>
+
+      {/* Row 13: Tactical Field Utilities (Cryptography & Networking) */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-brand-purple font-bold font-mono text-xs uppercase tracking-wider">
+          <Zap className="w-4 h-4 text-brand-purple" />
+          <span>Tactical Utilities // Multi-Decoder, Hash Analyzer & CIDR Calculator</span>
+        </div>
+        <FieldUtilities />
       </div>
     </section>
   );
